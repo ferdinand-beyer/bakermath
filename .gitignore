@@ -1,2 +1,10 @@
 # NodeJS
 node_modules/
+
+# Clojure
+.cpcache/
+.shadow-cljs/
+.nrepl-port
+
+# Application
+/resources/public/js
