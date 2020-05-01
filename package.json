@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/ferdinand-beyer/bakermath#readme",
   "dependencies": {
+    "@material-ui/core": "^4.9.12",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "shadow-cljs": "^2.8.109"

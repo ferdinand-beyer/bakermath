@@ -2,12 +2,16 @@
   (:require
    [com.fulcrologic.fulcro.application :as app]
    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
-   [com.fulcrologic.fulcro.dom :as dom]))
+   [com.fulcrologic.fulcro.dom :as dom]
+   [com.fulcrologic.fulcro.algorithms.react-interop :as interop]
+   ["@material-ui/core" :refer [Button]]))
 
 (defonce app (app/fulcro-app))
 
+(def button (interop/react-factory Button))
+
 (defsc Root [this props]
-  (dom/div "TODO"))
+  (dom/div (button {:variant "contained" :color "primary"} "Hello World!")))
 
 (defn ^:export init
   "Shadow-cljs sets this up to be our entry-point function. See shadow-cljs.edn `:init-fn` in the modules of the main build."
