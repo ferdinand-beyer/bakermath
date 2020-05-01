@@ -1,18 +1,29 @@
 (ns bakermath.ui
   (:require
+   [bakermath.ui.material :as material]
    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
-   [com.fulcrologic.fulcro.dom :as dom]
-   [com.fulcrologic.fulcro.algorithms.react-interop :as interop]
-   ["@material-ui/core/Button" :as mui-button]))
+   [com.fulcrologic.fulcro.dom :as dom]))
 
-(def mui-button (interop/react-factory mui-button/default))
+(defsc AppBar [this props]
+  (material/app-bar
+   {}
+   (material/tool-bar
+    {}
+    (material/typography {:variant "h6"} "Baker's Math"))))
 
-(defsc Btn [this props]
-  (mui-button {:variant "contained"
-               :color "primary"}
-              (:text props)))
+(def app-bar (comp/factory AppBar))
 
-(def btn (comp/factory Btn))
+(defsc Button [this props]
+  (material/button {:variant "contained"
+                    :color "primary"
+                    :onClick (:act props)}
+                   (:text props)))
+
+(def button (comp/factory Button))
 
 (defsc Root [this props]
-  (dom/div (btn {:text "I like my button"})))
+  (dom/div
+   (app-bar)
+   (dom/div {:style {:margin-top "84px"}}
+    (button {:text "I like my button..."
+             :act #(println "Clicked")}))))
