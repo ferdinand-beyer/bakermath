@@ -1,0 +1,30 @@
+{
+  "name": "bakermath",
+  "version": "0.1.0",
+  "description": "Baker's Percentages Calculator",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ferdinand-beyer/bakermath.git"
+  },
+  "keywords": [
+    "baker",
+    "percentage",
+    "math",
+    "dough"
+  ],
+  "author": "Ferdinand Beyer",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ferdinand-beyer/bakermath/issues"
+  },
+  "homepage": "https://github.com/ferdinand-beyer/bakermath#readme",
+  "dependencies": {
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "shadow-cljs": "^2.8.109"
+  }
+}
