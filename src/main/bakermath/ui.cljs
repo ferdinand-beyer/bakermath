@@ -1,5 +1,6 @@
 (ns bakermath.ui
   (:require
+   [bakermath.mutation :as mut]
    [bakermath.ui.material :as material]
    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
    [com.fulcrologic.fulcro.dom :as dom]))
@@ -40,7 +41,7 @@
 (def ingredient (comp/factory Ingredient {:keyfn :item/id}))
 
 (defsc IngredientList
-  [this {:list/keys [name items] :as props}]
+  [this {:list/keys [id name items] :as props}]
   {:query [:list/id :list/name {:list/items (comp/get-query Ingredient)}]
    :ident (fn [] [:list/id (:list/id props)])
    :initial-state
@@ -63,7 +64,10 @@
                    [7 "Wheat Full Grain" "50 g"]
                    [8 "Water" "175 g"]
                    [9 "Salt" "9 g"]])))})}
-  (let [delete (fn [id] (println "Delete Item: " id))]
+  (let [delete (fn [item-id]
+                 (comp/transact! this
+                                 [(mut/delete-item {:list/id id
+                                                    :item/id item-id})]))]
     (material/list
      {}
      (material/list-subheader {} name)
