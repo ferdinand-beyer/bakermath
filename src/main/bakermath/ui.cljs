@@ -18,15 +18,15 @@
 (defsc Ingredient
   [this
    {:item/keys [id quantity]
-    :ingredient/keys [name]
+    {name :ingredient/name} :item/ingredient
     :as props}
    {:keys [on-delete]}]
-  {:query [:item/id :item/quantity :ingredient/name]
+  {:query [:item/id :item/quantity {:item/ingredient [:ingredient/name]}]
    :ident (fn [] [:item/id (:item/id props)])
    :initial-state (fn [{:keys [id name quantity]}]
                     {:item/id id
                      :item/quantity quantity
-                     :ingredient/name name})}
+                     :item/ingredient {:ingredient/name name}})}
   (material/list-item
    {:button true}
    (material/list-item-avatar
