@@ -14,9 +14,11 @@
 (def app-bar (comp/factory AppBar))
 
 (defsc Ingredient
-  [this {:item/keys [quantity]
-         :ingredient/keys [name]
-         :as props}]
+  [this
+   {:item/keys [id quantity]
+    :ingredient/keys [name]
+    :as props}
+   {:keys [on-delete]}]
   {:query [:item/id :item/quantity :ingredient/name]
    :ident (fn [] [:item/id (:item/id props)])
    :initial-state (fn [{:keys [id name quantity]}]
@@ -26,7 +28,14 @@
   (material/list-item
    {:button true}
    (material/list-item-text {:primary name,
-                             :secondary quantity})))
+                             :secondary quantity})
+   (material/list-item-secondary-action
+    {}
+    (material/icon-button
+     {:edge "end"
+      :aria-label "delete"
+      :onClick #(on-delete id)}
+     (material/delete-icon {})))))
 
 (def ingredient (comp/factory Ingredient {:keyfn :item/id}))
 
@@ -54,10 +63,11 @@
                    [7 "Wheat Full Grain" "50 g"]
                    [8 "Water" "175 g"]
                    [9 "Salt" "9 g"]])))})}
-  (material/list
-   {}
-   (concat [(material/list-subheader {} name)]
-           (map ingredient items))))
+  (let [delete (fn [id] (println "Delete Item: " id))]
+    (material/list
+     {}
+     (material/list-subheader {} name)
+     (map #(ingredient (comp/computed % {:on-delete delete})) items))))
 
 (def ingredient-list (comp/factory IngredientList {:keyfn :list/id}))
 
@@ -69,5 +79,5 @@
                           [[1 "Sourdough"] [2 "Main dough"]])})}
   (dom/div
    (app-bar)
-   (dom/div {:style {:margin-top "64px"}}
+   (dom/div {:style {:marginTop "64px"}}
             (map ingredient-list lists))))
