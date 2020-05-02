@@ -13,52 +13,61 @@
 
 (def app-bar (comp/factory AppBar))
 
-(defsc Ingredient [this {:ingredient/keys [name quantity]}]
-  {:initial-state (fn [{:keys [name quantity]}]
-                    #:ingredient{:name name
-                                 :quantity quantity})}
+(defsc Ingredient
+  [this {:item/keys [quantity]
+         :ingredient/keys [name]
+         :as props}]
+  {:query [:item/id :item/quantity :ingredient/name]
+   :ident (fn [] [:item/id (:item/id props)])
+   :initial-state (fn [{:keys [id name quantity]}]
+                    {:item/id id
+                     :item/quantity quantity
+                     :ingredient/name name})}
   (material/list-item
    {:button true}
    (material/list-item-text {:primary name,
                              :secondary quantity})))
 
-(def ingredient (comp/factory Ingredient {:keyfn :ingredient/name}))
+(def ingredient (comp/factory Ingredient {:keyfn :item/id}))
 
-(defsc IngredientList [this {:list/keys [name ingredients]}]
-  {:initial-state
-   (fn [{:keys [name]}]
-     {:list/name name
-      :list/ingredients
-      (letfn [(ingredient [[name quantity]]
-                (comp/get-initial-state Ingredient {:name name
-                                                    :quantity quantity}))]
-        (case name
-          "Sourdough"
-          (map ingredient
-               [["Rye Full Grain" "100 g"]
-                ["Rye 1150" "50 g"]
-                ["Water" "150 g"]
-                ["Starter" "15 g"]])
-          "Main dough"
-          (map ingredient
-               [["Rye 1150" "200 g"]
-                ["Wheat 1050" "100 g"]
-                ["Wheat Full Grain" "50 g"]
-                ["Water" "175 g"]
-                ["Salt" "9 g"]])))})}
+(defsc IngredientList
+  [this {:list/keys [name items] :as props}]
+  {:query [:list/id :list/name {:list/items (comp/get-query Ingredient)}]
+   :ident (fn [] [:list/id (:list/id props)])
+   :initial-state
+   (fn [{:keys [id name]}]
+     {:list/id id
+      :list/name name
+      :list/items
+      (let [keys [:id :name :quantity]
+            item-state #(comp/get-initial-state Ingredient (zipmap keys %))]
+        (case id
+          1 (mapv item-state
+                  [[1 "Rye Full Grain" "100 g"]
+                   [2 "Rye 1150" "50 g"]
+                   [3 "Water" "150 g"]
+                   [4 "Starter" "15 g"]])
+
+          2 (mapv item-state
+                  [[5 "Rye 1150" "200 g"]
+                   [6 "Wheat 1050" "100 g"]
+                   [7 "Wheat Full Grain" "50 g"]
+                   [8 "Water" "175 g"]
+                   [9 "Salt" "9 g"]])))})}
   (material/list
    {}
    (concat [(material/list-subheader {} name)]
-    (map ingredient ingredients))))
+           (map ingredient items))))
 
-(def ingredient-list (comp/factory IngredientList))
+(def ingredient-list (comp/factory IngredientList {:keyfn :list/id}))
 
-(defsc Root [this props]
-  {:initial-state
-   (fn [params] {:sourdough (comp/get-initial-state IngredientList {:name "Sourdough"})
-                 :main (comp/get-initial-state IngredientList {:name "Main dough"})})}
+(defsc Root [this {:recipe/keys [lists]}]
+  {:query [{:recipe/lists (comp/get-query IngredientList)}]
+   :initial-state
+   (fn [params]
+     {:recipe/lists (mapv #(comp/get-initial-state IngredientList (zipmap [:id :name] %))
+                          [[1 "Sourdough"] [2 "Main dough"]])})}
   (dom/div
    (app-bar)
    (dom/div {:style {:margin-top "64px"}}
-            (ingredient-list (:sourdough props))
-            (ingredient-list (:main props)))))
+            (map ingredient-list lists))))
