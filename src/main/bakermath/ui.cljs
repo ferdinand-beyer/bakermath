@@ -28,6 +28,8 @@
                      :ingredient/name name})}
   (material/list-item
    {:button true}
+   (material/list-item-avatar
+    {} (material/avatar {} (-> name (.substr 0 1) .toUpperCase)))
    (material/list-item-text {:primary name,
                              :secondary quantity})
    (material/list-item-secondary-action
@@ -71,7 +73,11 @@
     (material/list
      {}
      (material/list-subheader {} name)
-     (map #(ingredient (comp/computed % {:on-delete delete})) items))))
+     (map #(ingredient (comp/computed % {:on-delete delete})) items)
+     (material/list-item
+      {:button true}
+      (material/list-item-icon {} (material/add-icon))
+      (material/list-item-text {:primary "Add ingredient"})))))
 
 (def ingredient-list (comp/factory IngredientList {:keyfn :list/id}))
 
@@ -83,5 +89,5 @@
                           [[1 "Sourdough"] [2 "Main dough"]])})}
   (dom/div
    (app-bar)
-   (dom/div {:style {:marginTop "64px"}}
-            (map ingredient-list lists))))
+   (material/tool-bar {})
+   (map ingredient-list lists)))
