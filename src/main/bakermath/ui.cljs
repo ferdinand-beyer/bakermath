@@ -3,7 +3,8 @@
    [bakermath.mutation :as mut]
    [bakermath.ui.material :as material]
    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
-   [com.fulcrologic.fulcro.dom :as dom]))
+   [com.fulcrologic.fulcro.dom :as dom]
+   [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]))
 
 (defsc AppBar [this props]
   (material/app-bar
@@ -43,8 +44,11 @@
 (def ingredient (comp/factory Ingredient {:keyfn :item/id}))
 
 (defsc IngredientList
-  [this {:list/keys [id name items] :as props}]
-  {:query [:list/id :list/name {:list/items (comp/get-query Ingredient)}]
+  [this {:list/keys [id name items]
+         :ui/keys [editing]
+         :as props}]
+  {:query [:list/id :list/name :ui/editing
+           {:list/items (comp/get-query Ingredient)}]
    :ident (fn [] [:list/id (:list/id props)])
    :initial-state
    (fn [{:keys [id name]}]
@@ -75,9 +79,33 @@
      (material/list-subheader {} name)
      (map #(ingredient (comp/computed % {:on-delete delete})) items)
      (material/list-item
-      {:button true}
+      {:button true
+       :onClick #(m/toggle! this :ui/editing)}
       (material/list-item-icon {} (material/add-icon))
-      (material/list-item-text {:primary "Add ingredient"})))))
+      (material/list-item-text {:primary "Add ingredient"}))
+     (material/dialog
+      {:open (boolean editing)
+       :disableBackdropClick true
+       :disableEscapeKeyDown true}
+      (material/dialog-title {} "Add ingredient")
+      (material/dialog-content
+       {}
+       (material/text-field
+        {:label "Ingredient"
+         :autoFocus true})
+       (material/text-field
+        {:label "Quantity"
+         :type "number"
+         :InputProps {:endAdornment (material/input-adornment {:position "end"} "g")}}))
+      (material/dialog-actions
+       {}
+       (material/button
+        {:onClick #(m/toggle! this :ui/editing)}
+        "Cancel")
+       (material/button
+        {:color "primary"
+         :onClick #(m/toggle! this :ui/editing)}
+        "Save"))))))
 
 (def ingredient-list (comp/factory IngredientList {:keyfn :list/id}))
 

@@ -7,5 +7,5 @@
   "Delete item :item/id from list :list/id."
   [{list-id :list/id
     item-id :item/id}]
-  (action [{:keys [state]}]
+  (action [{:keys [state] :as env}]
           (swap! state merge/remove-ident* [:item/id item-id] [:list/id list-id :list/items])))
