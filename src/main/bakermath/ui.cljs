@@ -5,7 +5,7 @@
    [com.fulcrologic.fulcro.algorithms.tempid :as tempid :refer [tempid]]
    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
    [com.fulcrologic.fulcro.dom :as dom]
-   [com.fulcrologic.fulcro.mutations :as m]))
+   [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]))
 
 (def ingredients {:rfg "Rye Full Grain"
                   :r1150 "Rye 1150"
@@ -31,6 +31,87 @@
    (fn [id] #:ingredient{:id id
                          :name (get ingredients id)})})
 
+(defsc ItemQuery [this props]
+  {:query [:item/id :item/quantity {:item/ingredient (comp/get-query Ingredient)}]
+   :ident :item/id})
+
+(declare ItemForm)
+
+(defmutation new-item [{:keys [id]}]
+  (action [{:keys [state]}]
+          (swap! state (fn [s]
+                         (-> s
+                             (assoc-in [:form/id :item] {:form/id :item
+                                                         :form/mode :new}))))))
+
+(defmutation edit-item [{:keys [id]}]
+  (action [{:keys [state]}]
+          (swap! state (fn [s]
+                         (-> s
+                             (assoc-in [:form/id :item] {:form/id :item
+                                                         :form/mode :edit
+                                                         :form/item [:item/id id]}))))))
+
+(defmutation close-item-edit [{:keys [id]}]
+  (action [{:keys [state]}]
+          (swap! state update-in [:form/id :item] dissoc :form/mode)))
+
+(defsc ItemForm [this {:keys [item/quantity ingredient/name]
+                       :form/keys [mode item ingredient]
+                       :as props}]
+  {:query [:form/id :form/mode :item/quantity :ingredient/name
+           {:form/item (comp/get-query ItemQuery)}
+           {:form/ingredient (comp/get-query Ingredient)}]
+   :ident :form/id}
+  (let [ingredient* (or ingredient (:item/ingredient item))
+        quantity* (or quantity (:item/quantity item) "")
+        name* (or name (:ingredient/name ingredient*) "")
+        cancel #(comp/transact! this [(close-item-edit {})])
+        save (fn []
+               (let [ingredient-id (or (:ingredient/id ingredient*) (tempid))
+                     item-id (or (:item/id item) (tempid))]
+                 ; TODO: Create a new ingredient when changing the name?
+                 (comp/transact! this [(mut/add-ingredient {:tempid ingredient-id
+                                                            :name name*})
+                                       (mut/add-item {:tempid item-id
+                                                      :quantity quantity*
+                                                      :ingredient/id ingredient-id
+                                                      ; TODO: List ID!
+                                                      :list/id 1})
+                                       (close-item-edit {})])))]
+    (material/dialog
+     {:open (some? mode)
+      :disableBackdropClick true
+      :disableEscapeKeyDown true}
+     (material/dialog-title {} (if (= mode :new)
+                                 "Add ingredient"
+                                 "Edit ingredient"))
+     (material/dialog-content
+      {}
+      (material/text-field
+       {:label "Ingredient"
+        :autoFocus (= mode :new)
+        :value name*
+        :onChange #(m/set-string! this :ingredient/name :event %)})
+      (material/text-field
+       {:label "Quantity"
+        ;:type "number"
+        ;:InputProps {:endAdornment (material/input-adornment {:position "end"} "g")}
+        :autoFocus (= mode :edit)
+        :value quantity*
+        :onChange #(m/set-string! this :item/quantity :event %)}))
+     (material/dialog-actions
+      {}
+      (material/button
+       {:onClick cancel}
+       "Cancel")
+      (material/button
+       {:color "primary"
+        :onClick save}
+       "Save")))))
+
+(def item-form (comp/factory ItemForm {:keyfn :item/id}))
+
 (defsc Item
   [this
    {:item/keys [id quantity ingredient]
@@ -46,7 +127,8 @@
                      :item/ingredient
                      (comp/get-initial-state Ingredient ingredient)})}
   (material/list-item
-   {:button true}
+   {:button true
+    :onClick #(comp/transact! this [(edit-item {:id id})])}
    (material/list-item-avatar
     {} (material/avatar {} (-> name (.substr 0 1) .toUpperCase)))
    (material/list-item-text {:primary name,
@@ -63,10 +145,8 @@
 
 (defsc IngredientList
   [this {:list/keys [id name items]
-         :ui/keys [editing]
          :as props}]
-  {:query [:list/id :list/name :ui/editing
-           {:list/items (comp/get-query Item)}]
+  {:query [:list/id :list/name {:list/items (comp/get-query Item)}]
    :ident (fn [] [:list/id (:list/id props)])
    :initial-state
    (fn [{:keys [id name]}]
@@ -108,43 +188,23 @@
      (map #(ingredient (comp/computed % {:on-delete delete})) items)
      (material/list-item
       {:button true
-       :onClick #(m/toggle! this :ui/editing)}
+       :onClick #(comp/transact! this [(new-item {:id (tempid)})])}
       (material/list-item-icon {} (material/add-icon))
-      (material/list-item-text {:primary "Add ingredient"}))
-     (material/dialog
-      {:open (boolean editing)
-       :disableBackdropClick true
-       :disableEscapeKeyDown true}
-      (material/dialog-title {} "Add ingredient")
-      (material/dialog-content
-       {}
-       (material/text-field
-        {:label "Ingredient"
-         :autoFocus true})
-       (material/text-field
-        {:label "Quantity"
-         :type "number"
-         :InputProps {:endAdornment (material/input-adornment {:position "end"} "g")}}))
-      (material/dialog-actions
-       {}
-       (material/button
-        {:onClick #(m/toggle! this :ui/editing)}
-        "Cancel")
-       (material/button
-        {:color "primary"
-         :onClick #(do (add-item)
-                       (m/toggle! this :ui/editing))}
-        "Save"))))))
+      (material/list-item-text {:primary "Add ingredient"})))))
 
 (def ingredient-list (comp/factory IngredientList {:keyfn :list/id}))
 
-(defsc Root [this {:recipe/keys [lists]}]
-  {:query [{:recipe/lists (comp/get-query IngredientList)}]
+(defsc Root [this {lists :root/lists
+                   form :root/item-form}]
+  {:query [{:root/lists (comp/get-query IngredientList)}
+           {:root/item-form (comp/get-query ItemForm)}]
    :initial-state
    (fn [params]
-     {:recipe/lists (mapv #(comp/get-initial-state IngredientList (zipmap [:id :name] %))
-                          [[1 "Sourdough"] [2 "Main dough"]])})}
+     {:root/lists (mapv #(comp/get-initial-state IngredientList (zipmap [:id :name] %))
+                        [[1 "Sourdough"] [2 "Main dough"]])
+      :root/item-form {:form/id :item}})}
   (dom/div
    (app-bar)
    (material/tool-bar {})
-   (map ingredient-list lists)))
+   (map ingredient-list lists)
+   (item-form form)))
