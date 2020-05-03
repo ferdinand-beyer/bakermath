@@ -2,9 +2,10 @@
   (:require
    [bakermath.mutation :as mut]
    [bakermath.ui.material :as material]
+   [com.fulcrologic.fulcro.algorithms.tempid :as tempid :refer [tempid]]
    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
    [com.fulcrologic.fulcro.dom :as dom]
-   [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]))
+   [com.fulcrologic.fulcro.mutations :as m]))
 
 (def ingredients {:rfg "Rye Full Grain"
                   :r1150 "Rye 1150"
@@ -87,10 +88,20 @@
                    [7 :wfg "50 g"]
                    [8 :w "175 g"]
                    [9 :s "9 g"]])))})}
-  (let [delete (fn [item-id]
-                 (comp/transact! this
-                                 [(mut/delete-item {:list/id id
-                                                    :item/id item-id})]))]
+  (letfn [(delete [item-id]
+            (comp/transact! this
+                            [(mut/delete-item {:list/id id
+                                               :item/id item-id})]))
+          (add-item []
+                    (let [ingredient-id (tempid)
+                          item-id (tempid)]
+                    (comp/transact! this
+                                    [(mut/add-ingredient {:tempid ingredient-id
+                                                          :name "Sunflower seeds"})
+                                     (mut/add-item {:tempid item-id
+                                                    :quantity "123 g"
+                                                    :list/id id
+                                                    :ingredient/id ingredient-id})])))]
     (material/list
      {}
      (material/list-subheader {} name)
@@ -121,7 +132,8 @@
         "Cancel")
        (material/button
         {:color "primary"
-         :onClick #(m/toggle! this :ui/editing)}
+         :onClick #(do (add-item)
+                       (m/toggle! this :ui/editing))}
         "Save"))))))
 
 (def ingredient-list (comp/factory IngredientList {:keyfn :list/id}))
