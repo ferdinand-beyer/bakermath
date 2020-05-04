@@ -9,7 +9,10 @@
   [{list-id :list/id
     item-id :item/id}]
   (action [{:keys [state] :as env}]
-          (swap! state merge/remove-ident* [:item/id item-id] [:list/id list-id :list/items])))
+          (swap! state #(-> %
+                            (merge/remove-ident* [:item/id item-id]
+                                                 [:list/id list-id :list/items])
+                            (update-in [:item/id] dissoc item-id)))))
 
 (defmutation add-ingredient
   [{:keys [tempid name]}]
