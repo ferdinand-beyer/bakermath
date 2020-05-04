@@ -31,12 +31,6 @@
    (fn [id] #:ingredient{:id id
                          :name (get ingredients id)})})
 
-(defsc ItemQuery [this props]
-  {:query [:item/id :item/quantity {:item/ingredient (comp/get-query Ingredient)}]
-   :ident :item/id})
-
-(declare ItemForm)
-
 (defmutation new-item [{:keys [id]}]
   (action [{:keys [state]}]
           (swap! state (fn [s]
@@ -56,12 +50,14 @@
   (action [{:keys [state]}]
           (swap! state update-in [:form/id :item] dissoc :form/mode)))
 
-(defsc ItemForm [this {:keys [item/quantity ingredient/name]
-                       :form/keys [mode item ingredient]
-                       :as props}]
+(defsc ItemForm
+  [this {:keys [item/quantity ingredient/name]
+         :form/keys [mode item ingredient]
+         :as props}]
   {:query [:form/id :form/mode :item/quantity :ingredient/name
-           {:form/item (comp/get-query ItemQuery)}
-           {:form/ingredient (comp/get-query Ingredient)}]
+           {:form/item [:item/id :item/quantity
+                        {:item/ingredient [:ingredient/id :ingredient/name]}]}
+           {:form/ingredient [:ingredient/id :ingredient/name]}]
    :ident :form/id}
   (let [ingredient* (or ingredient (:item/ingredient item))
         quantity* (or quantity (:item/quantity item) "")
@@ -80,6 +76,8 @@
                                                       :list/id 1})
                                        (close-item-edit {})])))]
     (material/dialog
+     ;; TODO Removing the mode will change the title while phasing
+     ;; out the dialog.  Need a dedicated :form/enabled?
      {:open (some? mode)
       :disableBackdropClick true
       :disableEscapeKeyDown true}
@@ -112,6 +110,9 @@
 
 (def item-form (comp/factory ItemForm {:keyfn :item/id}))
 
+(defn avatar-color [name]
+  (str "hsl(" (-> name hash (mod 360)) ", 70%, 60%"))
+
 (defsc Item
   [this
    {:item/keys [id quantity ingredient]
@@ -130,7 +131,10 @@
    {:button true
     :onClick #(comp/transact! this [(edit-item {:id id})])}
    (material/list-item-avatar
-    {} (material/avatar {} (-> name (.substr 0 1) .toUpperCase)))
+    {}
+    (material/avatar
+     {:style {:backgroundColor (avatar-color name)}}
+     (-> name (.substr 0 1) .toUpperCase)))
    (material/list-item-text {:primary name,
                              :secondary quantity})
    (material/list-item-secondary-action
