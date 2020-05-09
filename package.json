@@ -25,8 +25,8 @@
   "dependencies": {
     "@material-ui/core": "^4.9.12",
     "@material-ui/icons": "^4.9.1",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
+    "react": "16.13.0",
+    "react-dom": "16.13.0",
     "shadow-cljs": "^2.8.109"
   }
 }
