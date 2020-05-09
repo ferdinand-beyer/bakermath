@@ -1,11 +1,13 @@
 (ns bakermath.core
   (:require [reagent.dom]
             [re-frame.core :as rf]
-            ; [bakermath.events]
+            [bakermath.events :as e]
             ; [bakermath.subs]
             [bakermath.views]))
 
 (enable-console-print!)
+
+(rf/dispatch-sync [::e/init-db])
 
 (defn render! []
   (reagent.dom/render [bakermath.views/app]
