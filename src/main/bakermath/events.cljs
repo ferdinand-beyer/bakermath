@@ -56,5 +56,6 @@
          (update-in [:recipe/doughs
                      (:editor/dough-ref editor)
                      :dough/ingredients]
+                    ;; TODO: Force into vector to append to the end?
                     conj ingredient)
          (assoc-in [:dough-ingredient-editor :editor/visible] false)))))
