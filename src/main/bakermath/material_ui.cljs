@@ -5,6 +5,7 @@
 
    ["@material-ui/core/AppBar" :as app-bar]
    ["@material-ui/core/Avatar" :as avatar]
+   
    ["@material-ui/core/Button" :as button]
 
    ["@material-ui/core/Dialog" :as dialog]
@@ -13,7 +14,6 @@
    ["@material-ui/core/DialogContentText" :as dialog-content-text]
    ["@material-ui/core/DialogTitle" :as dialog-title]
 
-   ["@material-ui/core/Divider" :as divider]
    ["@material-ui/core/IconButton" :as icon-button]
    ["@material-ui/core/InputAdornment" :as input-adornment]
 
@@ -25,7 +25,6 @@
    ["@material-ui/core/ListItemText" :as list-item-text]
    ["@material-ui/core/ListSubheader" :as list-subheader]
 
-   ["@material-ui/core/Paper" :as paper]
    ["@material-ui/core/TextField" :as text-field]
    ["@material-ui/core/ToolBar" :as tool-bar]
    ["@material-ui/core/Typography" :as typography]
@@ -41,11 +40,6 @@
 ;; https://github.com/reagent-project/reagent/blob/master/examples/material-ui/src/example/core.cljs
 
 (set! *warn-on-infer* true)
-
-(defn event-value
-  [^js/Event e]
-  (let [^js/HTMLInputElement el (.-target e)]
-    (.-value el)))
 
 (def ^:private -input
   (r/reactify-component
@@ -76,6 +70,14 @@
      children)))
 
 (def app-bar (r/adapt-react-class app-bar/default))
+
+(def button (r/adapt-react-class button/default))
+
+(def dialog (r/adapt-react-class dialog/default))
+(def dialog-actions (r/adapt-react-class dialog-actions/default))
+(def dialog-content (r/adapt-react-class dialog-content/default))
+(def dialog-content-text (r/adapt-react-class dialog-content-text/default))
+(def dialog-title (r/adapt-react-class dialog-title/default))
 
 (def list (r/adapt-react-class list/default))
 (def list-item (r/adapt-react-class list-item/default))

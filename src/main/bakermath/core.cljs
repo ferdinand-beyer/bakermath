@@ -5,10 +5,6 @@
             ; [bakermath.subs]
             [bakermath.views]))
 
-(enable-console-print!)
-
-(rf/dispatch-sync [::e/init-db])
-
 (defn render! []
   (reagent.dom/render [bakermath.views/app]
                       (.getElementById js/document "app")))
@@ -18,4 +14,6 @@
   (render!))
 
 (defn ^:export init []
+  (enable-console-print!)
+  (rf/dispatch-sync [::e/init-db])
   (render!))
