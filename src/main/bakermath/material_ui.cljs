@@ -71,7 +71,7 @@
                 (:multiline props) nil
                 (:select props) nil
                 :else -input)]
-    (conj
+    (into
      [-text-field (assoc-in props [:InputProps :inputComponent] input)]
      children)))
 
