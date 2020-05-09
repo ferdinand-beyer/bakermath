@@ -2,12 +2,41 @@
   (:refer-clojure :exclude [list])
   (:require
    [reagent.core :as r]
-   [reagent.impl.template :as rtpl]
-   ["@material-ui/core" :as mui]
+
+   ["@material-ui/core/AppBar" :as app-bar]
+   ["@material-ui/core/Avatar" :as avatar]
+   ["@material-ui/core/Button" :as button]
+
+   ["@material-ui/core/Dialog" :as dialog]
+   ["@material-ui/core/DialogActions" :as dialog-actions]
+   ["@material-ui/core/DialogContent" :as dialog-content]
+   ["@material-ui/core/DialogContentText" :as dialog-content-text]
+   ["@material-ui/core/DialogTitle" :as dialog-title]
+
+   ["@material-ui/core/Divider" :as divider]
+   ["@material-ui/core/IconButton" :as icon-button]
+   ["@material-ui/core/InputAdornment" :as input-adornment]
+
+   ["@material-ui/core/List" :as list]
+   ["@material-ui/core/ListItem" :as list-item]
+   ["@material-ui/core/ListItemAvatar" :as list-item-avatar]
+   ["@material-ui/core/ListItemIcon" :as list-item-icon]
+   ["@material-ui/core/ListItemSecondaryAction" :as list-item-secondary-action]
+   ["@material-ui/core/ListItemText" :as list-item-text]
+   ["@material-ui/core/ListSubheader" :as list-subheader]
+
+   ["@material-ui/core/Paper" :as paper]
+   ["@material-ui/core/TextField" :as text-field]
+   ["@material-ui/core/ToolBar" :as tool-bar]
+   ["@material-ui/core/Typography" :as typography]
+
+   ["@material-ui/icons/Add" :as add-icon]
+   ["@material-ui/icons/Delete" :as delete-icon]
+
    ["@material-ui/core/styles" :refer [createMuiTheme withStyles]]
    ["@material-ui/core/colors" :as mui-colors]
-   ["@material-ui/icons" :as mui-icons]
-   ["@material-ui/lab" :refer [Autocomplete]]))
+   
+   ["@material-ui/lab/Autocomplete" :as autocomplete]))
 
 ;; https://github.com/reagent-project/reagent/blob/master/examples/material-ui/src/example/core.cljs
 
@@ -18,47 +47,43 @@
   (let [^js/HTMLInputElement el (.-target e)]
     (.-value el)))
 
-(def ^:private input-component
+(def ^:private -input
   (r/reactify-component
    (fn [props]
      [:input (-> props
                  (assoc :ref (:inputRef props))
                  (dissoc :inputRef))])))
 
-(def ^:private textarea-component
+(def ^:private -textarea
   (r/reactify-component
    (fn [props]
      [:textarea (-> props
                     (assoc :ref (:inputRef props))
                     (dissoc :inputRef))])))
 
+(def ^:private -text-field (r/adapt-react-class text-field/default))
+
 (defn text-field [props & children]
-  (let [props (-> props
-                  (assoc-in [:InputProps :inputComponent]
-                            (cond
-                              (and (:multiline props) (:rows props) (not (:maxRows props)))
-                              textarea-component
+  (let [input (cond
+                (and (:multiline props)
+                     (:rows props)
+                     (not (:maxRows props))) -textarea
+                (:multiline props) nil
+                (:select props) nil
+                :else -input)]
+    (conj
+     [-text-field (assoc-in props [:InputProps :inputComponent] input)]
+     children)))
 
-                              (:multiline props)
-                              nil
+(def app-bar (r/adapt-react-class app-bar/default))
 
-                              (:select props)
-                              nil
+(def list (r/adapt-react-class list/default))
+(def list-item (r/adapt-react-class list-item/default))
+(def list-item-icon (r/adapt-react-class list-item-icon/default))
+(def list-item-text (r/adapt-react-class list-item-text/default))
+(def list-subheader (r/adapt-react-class list-subheader/default))
 
-                              :else
-                              input-component))
-                  rtpl/convert-prop-value)]
-    (apply r/create-element mui/TextField props (map r/as-element children))))
+(def toolbar (r/adapt-react-class tool-bar/default))
+(def typography (r/adapt-react-class typography/default))
 
-(def app-bar (r/adapt-react-class mui/AppBar))
-
-(def list (r/adapt-react-class mui/List))
-(def list-item (r/adapt-react-class mui/ListItem))
-(def list-item-icon (r/adapt-react-class mui/ListItemIcon))
-(def list-item-text (r/adapt-react-class mui/ListItemText))
-(def list-subheader (r/adapt-react-class mui/ListSubheader))
-
-(def toolbar (r/adapt-react-class mui/Toolbar))
-(def typography (r/adapt-react-class mui/Typography))
-
-(def add-icon (r/adapt-react-class mui-icons/Add))
+(def add-icon (r/adapt-react-class add-icon/default))
