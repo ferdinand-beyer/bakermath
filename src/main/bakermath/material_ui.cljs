@@ -70,6 +70,7 @@
      children)))
 
 (def app-bar (r/adapt-react-class app-bar/default))
+(def avatar (r/adapt-react-class avatar/default))
 
 (def button (r/adapt-react-class button/default))
 
@@ -79,9 +80,13 @@
 (def dialog-content-text (r/adapt-react-class dialog-content-text/default))
 (def dialog-title (r/adapt-react-class dialog-title/default))
 
+(def icon-button (r/adapt-react-class icon-button/default))
+
 (def list (r/adapt-react-class list/default))
 (def list-item (r/adapt-react-class list-item/default))
+(def list-item-avatar (r/adapt-react-class list-item-avatar/default))
 (def list-item-icon (r/adapt-react-class list-item-icon/default))
+(def list-item-secondary-action (r/adapt-react-class list-item-secondary-action/default))
 (def list-item-text (r/adapt-react-class list-item-text/default))
 (def list-subheader (r/adapt-react-class list-subheader/default))
 
@@ -89,3 +94,4 @@
 (def typography (r/adapt-react-class typography/default))
 
 (def add-icon (r/adapt-react-class add-icon/default))
+(def delete-icon (r/adapt-react-class delete-icon/default))

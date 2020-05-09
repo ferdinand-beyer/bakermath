@@ -14,3 +14,9 @@
  ::dough-ingredient-editor
  (fn [db _]
    (:dough-ingredient-editor db)))
+
+(rf/reg-sub
+ ::dough-ingredients
+ :<- [::doughs]
+ (fn [doughs [_ index]]
+   (get-in doughs [index :dough/ingredients])))

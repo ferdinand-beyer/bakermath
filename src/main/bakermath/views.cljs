@@ -15,13 +15,38 @@
   (let [^js/HTMLInputElement el (.-target e)]
     (.-value el)))
 
+;; TODO compute in sub!
+(defn avatar-color [name]
+  (str "hsl(" (-> name hash (mod 360)) ", 70%, 60%"))
+
+(defn dough-ingredient [_ ingredient]
+  (let [name (:ingredient/name ingredient)
+        quantity (:dough-ingredient/quantity ingredient)]
+    [mui/list-item
+     {:button true}
+     [mui/list-item-avatar
+      [mui/avatar
+       {:style {:backgroundColor (avatar-color name)}}
+       (-> name (.substr 0 1) .toUpperCase)]]
+     [mui/list-item-text {:primary name
+                          :secondary quantity}]
+     [mui/list-item-secondary-action
+      [mui/icon-button
+       {:edge :end}
+       [mui/delete-icon]]]]))
+
 (defn dough [i dough]
-  [mui/list
-   [mui/list-subheader (:dough/name dough)]
-   [mui/list-item {:button true
-                   :on-click #(rf/dispatch [::e/edit-new-dough-ingredient {:dough-index i}])}
-    [mui/list-item-icon [mui/add-icon]]
-    [mui/list-item-text "Add ingredient"]]])
+  (let [ingredients @(rf/subscribe [::sub/dough-ingredients i])]
+    [mui/list
+     [mui/list-subheader (:dough/name dough)]
+     (map-indexed (fn [i d]
+                    ^{:key i} [dough-ingredient i d])
+                  ingredients)
+     [mui/list-item
+      {:button true
+       :on-click #(rf/dispatch [::e/edit-new-dough-ingredient {:dough-index i}])}
+      [mui/list-item-icon [mui/add-icon]]
+      [mui/list-item-text "Add ingredient"]]]))
 
 (defn dough-list []
   [:div

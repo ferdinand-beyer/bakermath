@@ -22,7 +22,7 @@
  [check-spec-interceptor]
  (fn [db [_ {:keys [dough-index]}]]
    (assoc db :dough-ingredient-editor
-          {:dough/index dough-index
+          {:editor/dough-ref dough-index
            :editor/mode :new
            :editor/visible true})))
 
@@ -49,4 +49,12 @@
  ::save-dough-ingredient-edit
  [check-spec-interceptor]
  (fn [db _]
-   (assoc-in db [:dough-ingredient-editor :editor/visible] false)))
+   (let [editor (:dough-ingredient-editor db)
+         ingredient (select-keys editor [:ingredient/name
+                                         :dough-ingredient/quantity])]
+     (-> db
+         (update-in [:recipe/doughs
+                     (:editor/dough-ref editor)
+                     :dough/ingredients]
+                    conj ingredient)
+         (assoc-in [:dough-ingredient-editor :editor/visible] false)))))
