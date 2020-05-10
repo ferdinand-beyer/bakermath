@@ -19,7 +19,7 @@
 (defn avatar-color [name]
   (str "hsl(" (-> name hash (mod 360)) ", 70%, 60%"))
 
-(defn dough-ingredient [_ ingredient]
+(defn dough-ingredient [{:keys [index ingredient dough-index] :as props}]
   (let [name (:ingredient/name ingredient)
         quantity (:dough-ingredient/quantity ingredient)]
     [mui/list-item
@@ -32,26 +32,31 @@
                           :secondary quantity}]
      [mui/list-item-secondary-action
       [mui/icon-button
-       {:edge :end}
+       {:edge :end
+        :on-click #(rf/dispatch [::e/delete-dough-ingredient dough-index index])}
        [mui/delete-icon]]]]))
 
-(defn dough [i dough]
-  (let [ingredients @(rf/subscribe [::sub/dough-ingredients i])]
+(defn dough [{:keys [index dough]}]
+  (let [ingredients @(rf/subscribe [::sub/dough-ingredients index])]
     [mui/list
      [mui/list-subheader (:dough/name dough)]
      (map-indexed (fn [i d]
-                    ^{:key i} [dough-ingredient i d])
+                    ^{:key i} [dough-ingredient {:dough-index index
+                                                 :index i
+                                                 :ingredient d}])
                   ingredients)
      [mui/list-item
       {:button true
-       :on-click #(rf/dispatch [::e/edit-new-dough-ingredient {:dough-index i}])}
+       :on-click #(rf/dispatch [::e/edit-new-dough-ingredient
+                                {:dough-index index}])}
       [mui/list-item-icon [mui/add-icon]]
       [mui/list-item-text "Add ingredient"]]]))
 
 (defn dough-list []
   [:div
    (let [doughs @(rf/subscribe [::sub/doughs])]
-     (map-indexed (fn [i d] ^{:key i} [dough i d]) doughs))])
+     (map-indexed (fn [i d] ^{:key i} [dough {:index i, :dough d}])
+                  doughs))])
 
 (defn dough-ingredient-editor []
   (when-let [editor @(rf/subscribe [::sub/dough-ingredient-editor])]

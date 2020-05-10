@@ -12,6 +12,9 @@
 
 (def check-spec-interceptor (rf/after (partial check-and-throw ::db/db)))
 
+(defn dissoc-vec [coll index]
+  (vec (concat (subvec coll 0 index) (subvec coll (inc index)))))
+
 (rf/reg-event-db
  ::init-db
  [check-spec-interceptor]
@@ -58,3 +61,10 @@
                      :dough/ingredients]
                     #(conj (vec %) ingredient))
          (assoc-in [:dough-ingredient-editor :editor/visible] false)))))
+
+(rf/reg-event-db
+ ::delete-dough-ingredient
+ [check-spec-interceptor]
+ (fn [db [_ dough-index ingredient-index]]
+   (update-in db [:recipe/doughs dough-index :dough/ingredients]
+              dissoc-vec ingredient-index)))
