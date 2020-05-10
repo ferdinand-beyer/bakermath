@@ -4,11 +4,11 @@
             [re-frame.core :as rf]))
 
 (defn check-and-throw
-  "Throws an exception if `db` doesn't match the Spec `spec`."
-  [spec db]
-  (when-not (s/valid? spec db)
+  "Throws an exception if `val` doesn't match the Spec `spec`."
+  [spec val]
+  (when-not (s/valid? spec val)
     (throw (ex-info (str "spec check failed")
-                    {:explain-str (s/explain-str spec db)}))))
+                    (s/explain-data spec val)))))
 
 (def check-spec-interceptor (rf/after (partial check-and-throw ::db/db)))
 
@@ -56,6 +56,5 @@
          (update-in [:recipe/doughs
                      (:editor/dough-ref editor)
                      :dough/ingredients]
-                    ;; TODO: Force into vector to append to the end?
-                    conj ingredient)
+                    #(conj (vec %) ingredient))
          (assoc-in [:dough-ingredient-editor :editor/visible] false)))))
