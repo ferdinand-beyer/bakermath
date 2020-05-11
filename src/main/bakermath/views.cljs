@@ -19,7 +19,7 @@
 (defn avatar-color [name]
   (str "hsl(" (-> name hash (mod 360)) ", 70%, 60%"))
 
-(defn dough-ingredient [{:keys [index ingredient dough-index] :as props}]
+(defn dough-ingredient [{:keys [index ingredient dough-index]}]
   (let [name (:ingredient/name ingredient)
         quantity (:dough-ingredient/quantity ingredient)]
     [mui/list-item
@@ -67,31 +67,35 @@
       [mui/dialog
        {:open (:editor/visible editor)
         :on-close cancel-fn}
-       [mui/dialog-title {} (if (= mode :new)
-                              "Add ingredient"
-                              "Edit ingredient")]
-       [mui/dialog-content
-        [mui/text-field
-         {:label "Ingredient"
-          :auto-focus (= mode :new)
-          :value name
-          :on-change #(rf/dispatch [::e/update-dough-ingredient-editor-name
-                                    (event-value %)])}]
-        [mui/text-field
-         {:label "Quantity"
-          :type :number
-          :auto-focus (= mode :edit)
-          :value quantity
-          :on-change #(rf/dispatch [::e/update-dough-ingredient-editor-quantity
-                                    (event-value %)])}]]
-       [mui/dialog-actions
-        [mui/button
-         {:on-click cancel-fn}
-         "Cancel"]
-        [mui/button
-         {:color "primary"
-          :on-click #(rf/dispatch [::e/save-dough-ingredient-edit])}
-         "Save"]]])))
+       [:form
+        {:on-submit (fn [e]
+                      (.preventDefault e)
+                      (rf/dispatch [::e/save-dough-ingredient-edit]))}
+        [mui/dialog-title {} (if (= mode :new)
+                               "Add ingredient"
+                               "Edit ingredient")]
+        [mui/dialog-content
+         [mui/text-field
+          {:label "Ingredient"
+           :auto-focus (= mode :new)
+           :value name
+           :on-change #(rf/dispatch [::e/update-dough-ingredient-editor-name
+                                     (event-value %)])}]
+         [mui/text-field
+          {:label "Quantity"
+           :type :number
+           :auto-focus (= mode :edit)
+           :value quantity
+           :on-change #(rf/dispatch [::e/update-dough-ingredient-editor-quantity
+                                     (event-value %)])}]]
+        [mui/dialog-actions
+         [mui/button
+          {:on-click cancel-fn}
+          "Cancel"]
+         [mui/button
+          {:color :primary
+           :type :submit}
+          "Save"]]]])))
 
 (defn app []
   (let [recipe @(rf/subscribe [::sub/recipe])]
