@@ -103,13 +103,17 @@
      [mui/css-baseline]
      [mui/app-bar
       {:position :sticky}
-      [mui/tool-bar [mui/typography {:variant :h6} "Baker's Math"]]
+      [mui/tool-bar
+       [mui/icon-button
+       {:edge :start
+        :color :inherit}
+        [mui/arrow-back-icon]]
+       [mui/typography {:variant :h6} (:recipe/name recipe)]]
       [mui/tabs
        {:value 0
         :centered true}
        [mui/tab {:label "Recipe"}]
        [mui/tab {:label "Table"}]
        [mui/tab {:label "Ingredients"}]]]
-     [mui/typography {:variant :h5} (:recipe/name recipe)]
      [dough-list]
      [dough-ingredient-editor]]))

@@ -37,6 +37,7 @@
    ["@material-ui/lab/Autocomplete" :as autocomplete]
 
    ["@material-ui/icons/Add" :as add-icon]
+   ["@material-ui/icons/ArrowBack" :as arrow-back-icon]
    ["@material-ui/icons/Delete" :as delete-icon]
 
    ["@material-ui/core/styles" :refer [createMuiTheme withStyles]]
@@ -105,4 +106,5 @@
 (def typography (r/adapt-react-class typography/default))
 
 (def add-icon (r/adapt-react-class add-icon/default))
+(def arrow-back-icon (r/adapt-react-class arrow-back-icon/default))
 (def delete-icon (r/adapt-react-class delete-icon/default))

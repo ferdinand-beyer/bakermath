@@ -43,7 +43,7 @@
   (s/merge ::root ::recipe))
 
 (def default-db
-  {:recipe/name "Bread"
+  {:recipe/name "My Bread"
    :recipe/doughs
    [{:dough/name "Sour dough"}
     {:dough/name "Main dough"}]})
