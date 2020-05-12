@@ -97,23 +97,33 @@
            :type :submit}
           "Save"]]]])))
 
-(defn app []
-  (let [recipe @(rf/subscribe [::sub/recipe])]
-    [:<>
-     [mui/css-baseline]
-     [mui/app-bar
-      {:position :sticky}
-      [mui/tool-bar
-       [mui/icon-button
-       {:edge :start
-        :color :inherit}
-        [mui/arrow-back-icon]]
-       [mui/typography {:variant :h6} (:recipe/name recipe)]]
-      [mui/tabs
-       {:value 0
-        :centered true}
-       [mui/tab {:label "Recipe"}]
-       [mui/tab {:label "Table"}]
-       [mui/tab {:label "Ingredients"}]]]
-     [dough-list]
-     [dough-ingredient-editor]]))
+(def app
+  (mui/with-styles
+    (fn [theme]
+      {:root {:flexGrow 1}
+       :menuButton {:marginRight (.spacing theme 2)}
+       :title {:flexGrow 1}})
+    (fn [{:keys [classes]}]
+      (let [recipe @(rf/subscribe [::sub/recipe])]
+        [:div {:class (:root classes)}
+         [mui/css-baseline]
+         [mui/app-bar
+          {:position :sticky}
+          [mui/tool-bar
+           [mui/icon-button
+            {:edge :start
+             :class (:menuButton classes)
+             :color :inherit}
+            [mui/arrow-back-icon]]
+           [mui/typography
+            {:variant :h6
+             :class (:title classes)}
+            (:recipe/name recipe)]]
+          [mui/tabs
+           {:value 0
+            :centered true}
+           [mui/tab {:label "Recipe"}]
+           [mui/tab {:label "Table"}]
+           [mui/tab {:label "Ingredients"}]]]
+         [dough-list]
+         [dough-ingredient-editor]]))))
