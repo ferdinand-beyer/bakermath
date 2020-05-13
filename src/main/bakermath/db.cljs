@@ -16,6 +16,7 @@
 (s/def :recipe/name string?)
 (s/def :recipe/doughs
   (s/coll-of ::dough :kind vector?))
+(s/def :recipe/tab #{:recipe :table :ingredients})
 
 (s/def ::dough-ingredient
   (s/keys :req [:ingredient/name
@@ -27,7 +28,7 @@
 
 (s/def ::recipe
   (s/keys :req [:recipe/name]
-          :opt [:recipe/doughs]))
+          :opt [:recipe/doughs :recipe/tab]))
 
 (s/def ::dough-ingredient-editor
   (s/keys :req [:editor/visible

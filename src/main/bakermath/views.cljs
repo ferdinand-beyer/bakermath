@@ -97,6 +97,11 @@
            :type :submit}
           "Save"]]]])))
 
+(defn recipe-tab []
+  [:<>
+   [dough-list]
+   [dough-ingredient-editor]])
+
 (def app
   (mui/with-styles
     (fn [theme]
@@ -104,7 +109,8 @@
        :menuButton {:marginRight (.spacing theme 2)}
        :title {:flexGrow 1}})
     (fn [{:keys [classes]}]
-      (let [recipe @(rf/subscribe [::sub/recipe])]
+      (let [recipe @(rf/subscribe [::sub/recipe])
+            tab (or (:recipe/tab recipe) :recipe)]
         [:div {:class (:root classes)}
          [mui/app-bar
           {:position :sticky}
@@ -119,13 +125,18 @@
              :class (:title classes)}
             (:recipe/name recipe)]]
           [mui/tabs
-           {:value 0
-            :centered true}
-           [mui/tab {:label "Recipe"}]
-           [mui/tab {:label "Table"}]
-           [mui/tab {:label "Ingredients"}]]]
-         [dough-list]
-         [dough-ingredient-editor]]))))
+           {:centered true
+            :value tab
+            :on-change #(rf/dispatch [::e/select-recipe-tab {:tab (keyword %2)}])}
+           [mui/tab {:value :recipe
+                     :label "Recipe"}]
+           [mui/tab {:value :table
+                     :label "Table"}]
+           [mui/tab {:value :ingredients
+                     :label "Ingredients"}]]]
+         (case tab
+           :recipe [recipe-tab]
+           nil)]))))
 
 (def theme
   (mui/theme

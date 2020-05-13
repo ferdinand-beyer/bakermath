@@ -21,6 +21,12 @@
  (constantly db/default-db))
 
 (rf/reg-event-db
+ ::select-recipe-tab
+ [check-spec-interceptor]
+ (fn [db [_ {:keys [tab]}]]
+   (assoc db :recipe/tab tab)))
+
+(rf/reg-event-db
  ::edit-new-dough-ingredient
  [check-spec-interceptor]
  (fn [db [_ {:keys [dough-index]}]]
