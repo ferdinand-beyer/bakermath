@@ -124,22 +124,23 @@
   ([hue shade] (get-in colors [hue shade])))
 
 (defn decorate
-  "Decorate a Reagent component using the higher-order component pattern.
-   `decorator` needs to be a JavaScript function."
-  [decorator component]
-  (-> component r/reactify-component decorator r/adapt-react-class))
+  "Decorate a Reagent component using the higher-order component (HOC) pattern.
+   `hoc` needs to be a JavaScript function."
+  [hoc component]
+  (-> component r/reactify-component hoc r/adapt-react-class))
 
 (defn with-styles
   "Apply Material-UI styles to a Reagent component.  Translates between
    React / JavaScript and Reagent / ClojureScript; styles and classes
    will be ClojureScript maps."
-  ([styles] (partial with-styles styles))
-  ([styles component]
-   (decorate
-    (withStyles (if (fn? styles)
-                  (fn [theme] (clj->js (styles theme)))
-                  (clj->js styles)))
-    (fn [{:keys [classes] :as props} & children]
-      (apply component
-             (assoc props :classes (js->clj classes :keywordize-keys true))
-             children)))))
+  ([styles]
+   (let [hoc (withStyles (if (fn? styles)
+                           (fn [theme] (clj->js (styles theme)))
+                           (clj->js styles)))]
+     (fn [component]
+       (->> (fn [{:keys [classes] :as props} & children]
+              (apply component
+                     (assoc props :classes (js->clj classes :keywordize-keys true))
+                     children))
+            (decorate hoc)))))
+  ([styles component] ((with-styles styles) component)))
