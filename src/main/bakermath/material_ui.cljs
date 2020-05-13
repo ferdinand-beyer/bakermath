@@ -40,7 +40,7 @@
    ["@material-ui/icons/ArrowBack" :as arrow-back-icon]
    ["@material-ui/icons/Delete" :as delete-icon]
 
-   ["@material-ui/core/styles" :refer [createMuiTheme withStyles]]
+   ["@material-ui/core/styles" :refer [ThemeProvider createMuiTheme withStyles]]
    ["@material-ui/core/colors" :as mui-colors]))
 
 ;; https://github.com/reagent-project/reagent/blob/master/examples/material-ui/src/example/core.cljs
@@ -108,6 +108,20 @@
 (def add-icon (r/adapt-react-class add-icon/default))
 (def arrow-back-icon (r/adapt-react-class arrow-back-icon/default))
 (def delete-icon (r/adapt-react-class delete-icon/default))
+
+(def theme-provider (r/adapt-react-class ThemeProvider))
+
+(defn theme
+  "Create a theme."
+  [options]
+  (createMuiTheme (clj->js options)))
+
+(def colors (js->clj mui-colors :keywordize-keys true))
+
+(defn color
+  "Return a Material UI color."
+  ([hue] (get colors hue))
+  ([hue shade] (get-in colors [hue shade])))
 
 (defn decorate
   "Decorate a Reagent component using the higher-order component pattern.

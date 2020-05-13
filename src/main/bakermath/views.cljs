@@ -106,7 +106,6 @@
     (fn [{:keys [classes]}]
       (let [recipe @(rf/subscribe [::sub/recipe])]
         [:div {:class (:root classes)}
-         [mui/css-baseline]
          [mui/app-bar
           {:position :sticky}
           [mui/tool-bar
@@ -127,3 +126,13 @@
            [mui/tab {:label "Ingredients"}]]]
          [dough-list]
          [dough-ingredient-editor]]))))
+
+(def theme
+  (mui/theme
+   {:palette {:primary (mui/color :amber)}}))
+
+(defn root []
+  [:<>
+   [mui/css-baseline]
+   [mui/theme-provider {:theme theme}
+    [app]]])

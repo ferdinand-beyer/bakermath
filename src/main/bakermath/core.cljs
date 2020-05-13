@@ -6,7 +6,7 @@
             [bakermath.views]))
 
 (defn render! []
-  (reagent.dom/render [bakermath.views/app]
+  (reagent.dom/render [bakermath.views/root]
                       (.getElementById js/document "app")))
 
 (defn ^:dev/after-load refresh! []
