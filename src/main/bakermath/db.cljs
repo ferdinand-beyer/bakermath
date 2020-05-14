@@ -46,5 +46,25 @@
 (def default-db
   {:recipe/name "My Bread"
    :recipe/doughs
-   [{:dough/name "Sour dough"}
-    {:dough/name "Main dough"}]})
+   [{:dough/name "Sourdough"
+     :dough/ingredients
+     [{:ingredient/name "Rye flour full grain"
+       :dough-ingredient/quantity 100}
+      {:ingredient/name "Rye flour type 1150"
+       :dough-ingredient/quantity 50}
+      {:ingredient/name "Water"
+       :dough-ingredient/quantity 150}
+      {:ingredient/name "Sourdough starter"
+       :dough-ingredient/quantity 15}]}
+    {:dough/name "Main dough"
+     :dough/ingredients
+     [{:ingredient/name "Rye flour type 1150"
+       :dough-ingredient/quantity 200}
+      {:ingredient/name "Wheat flour full grain"
+       :dough-ingredient/quantity 50}
+      {:ingredient/name "Wheat flour type 1050"
+       :dough-ingredient/quantity 100}
+      {:ingredient/name "Water"
+       :dough-ingredient/quantity 175}
+      {:ingredient/name "Salt"
+       :dough-ingredient/quantity 9}]}]})

@@ -7,6 +7,8 @@
 
 (set! *warn-on-infer* true)
 
+(def indexed (partial map vector (range)))
+
 (defn debug [x]
   [:pre (with-out-str (pprint x))])
 
@@ -40,11 +42,10 @@
   (let [ingredients @(rf/subscribe [::sub/dough-ingredients index])]
     [mui/list
      [mui/list-subheader (:dough/name dough)]
-     (map-indexed (fn [i d]
-                    ^{:key i} [dough-ingredient {:dough-index index
-                                                 :index i
-                                                 :ingredient d}])
-                  ingredients)
+     (for [[i d] (indexed ingredients)]
+       ^{:key i} [dough-ingredient {:dough-index index
+                                    :index i
+                                    :ingredient d}])
      [mui/list-item
       {:button true
        :on-click #(rf/dispatch [::e/edit-new-dough-ingredient
@@ -55,8 +56,8 @@
 (defn dough-list []
   [:<>
    (let [doughs @(rf/subscribe [::sub/doughs])]
-     (map-indexed (fn [i d] ^{:key i} [dough {:index i, :dough d}])
-                  doughs))])
+     (for [[i d] (indexed doughs)]
+       ^{:key i} [dough {:index i, :dough d}]))])
 
 (defn dough-ingredient-editor []
   (when-let [editor @(rf/subscribe [::sub/dough-ingredient-editor])]
@@ -102,6 +103,21 @@
    [dough-list]
    [dough-ingredient-editor]])
 
+(defn table-tab []
+  (let [{:keys [columns data] :as table} @(rf/subscribe [::sub/table])]
+    [mui/table-container
+     [mui/table
+      [mui/table-head
+       [mui/table-row
+        (for [[i {:keys [label]}] (indexed columns)]
+          ^{:key i} [mui/table-cell label])]]
+      [mui/table-body
+       (for [[i cells] (indexed data)]
+         ^{:key i}
+         [mui/table-row
+          (for [[i label] (indexed cells)]
+            ^{:key i} [mui/table-cell label])])]]]))
+
 (def app
   (mui/with-styles
     (fn [theme]
@@ -136,6 +152,7 @@
                      :label "Ingredients"}]]]
          (case tab
            :recipe [recipe-tab]
+           :table [table-tab]
            nil)]))))
 
 (def theme

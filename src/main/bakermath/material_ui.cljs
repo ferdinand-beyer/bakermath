@@ -28,6 +28,14 @@
 
    ["@material-ui/core/Paper" :as paper]
    
+   ["@material-ui/core/Table" :as table]
+   ["@material-ui/core/TableBody" :as table-body]
+   ["@material-ui/core/TableCell" :as table-cell]
+   ["@material-ui/core/TableContainer" :as table-container]
+   ["@material-ui/core/TableFooter" :as table-footer]
+   ["@material-ui/core/TableHead" :as table-head]
+   ["@material-ui/core/TableRow" :as table-row]
+   ["@material-ui/core/TableSortLabel" :as table-sort-label]
    ["@material-ui/core/Tab" :as tab]
    ["@material-ui/core/Tabs" :as tabs]
    ["@material-ui/core/TextField" :as text-field]
@@ -100,6 +108,14 @@
 
 (def paper (r/adapt-react-class paper/default))
 
+(def table (r/adapt-react-class table/default))
+(def table-body (r/adapt-react-class table-body/default))
+(def table-cell (r/adapt-react-class table-cell/default))
+(def table-container (r/adapt-react-class table-container/default))
+(def table-footer (r/adapt-react-class table-footer/default))
+(def table-head (r/adapt-react-class table-head/default))
+(def table-row (r/adapt-react-class table-row/default))
+(def table-sort-label (r/adapt-react-class table-sort-label/default))
 (def tab (r/adapt-react-class tab/default))
 (def tabs (r/adapt-react-class tabs/default))
 (def tool-bar (r/adapt-react-class tool-bar/default))
