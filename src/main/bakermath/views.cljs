@@ -26,7 +26,7 @@
      {:button true}
      [mui/list-item-avatar
       [mui/avatar
-       {:style {:backgroundColor (avatar-color name)}}
+       {:style {:background-color (avatar-color name)}}
        (-> name (.substr 0 1) .toUpperCase)]]
      [mui/list-item-text {:primary name
                           :secondary quantity}]
