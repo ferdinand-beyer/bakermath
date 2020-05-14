@@ -43,4 +43,5 @@
                                         ingredients)
                         total (reduce + (map second quantities))
                         cells (reduce #(apply assoc %1 %2) cells quantities)]
-                    (concat [name] cells [total]))))))}))
+                    (concat [name] cells [total]))))
+           (sort-by first)))}))
