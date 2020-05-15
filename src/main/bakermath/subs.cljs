@@ -21,6 +21,7 @@
  (fn [doughs [_ index]]
    (get-in doughs [index :dough/ingredients])))
 
+;; TODO: Refactor!
 (rf/reg-sub
  ::table
  :<- [::doughs]

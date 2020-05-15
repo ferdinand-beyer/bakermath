@@ -8,6 +8,7 @@
 (s/def :editor/visible boolean?)
 (s/def :editor/mode #{:new :edit})
 (s/def :editor/dough-ref nat-int?)
+(s/def :editor/ingredient-ref nat-int?)
 
 (s/def :dough/name string?)
 (s/def :dough/ingredients
@@ -30,12 +31,24 @@
   (s/keys :req [:recipe/name]
           :opt [:recipe/doughs :recipe/tab]))
 
-(s/def ::dough-ingredient-editor
+(defmulti editor-mode :editor/mode)
+
+(defmethod editor-mode :new [_]
   (s/keys :req [:editor/visible
                 :editor/mode
                 :editor/dough-ref]
           :opt [:ingredient/name
                 :dough-ingredient/quantity]))
+
+(defmethod editor-mode :edit [_]
+  (s/keys :req [:editor/visible
+                :editor/mode
+                :editor/dough-ref
+                :editor/ingredient-ref]
+          :opt [:ingredient/name
+                :dough-ingredient/quantity]))
+
+(s/def ::dough-ingredient-editor (s/multi-spec editor-mode :editor/mode))
 
 (s/def ::root
   (s/keys :opt-un [::dough-ingredient-editor]))

@@ -27,6 +27,22 @@
    (assoc db :recipe/tab tab)))
 
 (rf/reg-event-db
+ ::edit-dough-ingredient
+ [check-spec-interceptor]
+ (fn [db [_ {:keys [dough-index ingredient-index]}]]
+   (let [{name :ingredient/name
+          quantity :dough-ingredient/quantity}
+         (get-in db [:recipe/doughs dough-index
+                     :dough/ingredients ingredient-index])]
+     (assoc db :dough-ingredient-editor
+            {:editor/dough-ref dough-index
+             :editor/ingredient-ref ingredient-index
+             :editor/mode :edit
+             :editor/visible true
+             :ingredient/name name
+             :dough-ingredient/quantity quantity}))))
+
+(rf/reg-event-db
  ::edit-new-dough-ingredient
  [check-spec-interceptor]
  (fn [db [_ {:keys [dough-index]}]]
@@ -54,6 +70,7 @@
  (fn [db _]
    (assoc-in db [:dough-ingredient-editor :editor/visible] false)))
 
+;; TODO: Refactor!
 (rf/reg-event-db
  ::save-dough-ingredient-edit
  [check-spec-interceptor]
@@ -61,12 +78,22 @@
    (let [editor (:dough-ingredient-editor db)
          ingredient (select-keys editor [:ingredient/name
                                          :dough-ingredient/quantity])]
-     (-> db
-         (update-in [:recipe/doughs
-                     (:editor/dough-ref editor)
-                     :dough/ingredients]
-                    #(conj (vec %) ingredient))
-         (assoc-in [:dough-ingredient-editor :editor/visible] false)))))
+     (case (:editor/mode editor)
+       :new
+       (-> db
+           (update-in [:recipe/doughs
+                       (:editor/dough-ref editor)
+                       :dough/ingredients]
+                      #(conj (vec %) ingredient))
+           (assoc-in [:dough-ingredient-editor :editor/visible] false))
+       :edit
+       (-> db
+           (update-in [:recipe/doughs
+                       (:editor/dough-ref editor)
+                       :dough/ingredients
+                       (:editor/ingredient-ref editor)]
+                      merge ingredient)
+           (assoc-in [:dough-ingredient-editor :editor/visible] false))))))
 
 (rf/reg-event-db
  ::delete-dough-ingredient

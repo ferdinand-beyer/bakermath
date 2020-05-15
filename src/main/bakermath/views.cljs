@@ -25,7 +25,10 @@
   (let [name (:ingredient/name ingredient)
         quantity (:dough-ingredient/quantity ingredient)]
     [mui/list-item
-     {:button true}
+     {:button true
+      :on-click #(rf/dispatch [::e/edit-dough-ingredient
+                               {:dough-index dough-index
+                                :ingredient-index index}])}
      [mui/list-item-avatar
       [mui/avatar
        {:style {:background-color (avatar-color name)}}
@@ -80,15 +83,17 @@
           {:label "Ingredient"
            :auto-focus (= mode :new)
            :value name
-           :on-change #(rf/dispatch [::e/update-dough-ingredient-editor-name
-                                     (event-value %)])}]
+           :on-change #(rf/dispatch-sync
+                        [::e/update-dough-ingredient-editor-name
+                         (event-value %)])}]
          [mui/text-field
           {:label "Quantity"
            :type :number
            :auto-focus (= mode :edit)
            :value quantity
-           :on-change #(rf/dispatch [::e/update-dough-ingredient-editor-quantity
-                                     (event-value %)])}]]
+           :on-change #(rf/dispatch-sync
+                        [::e/update-dough-ingredient-editor-quantity
+                         (event-value %)])}]]
         [mui/dialog-actions
          [mui/button
           {:on-click cancel-fn}
