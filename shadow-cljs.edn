@@ -3,4 +3,4 @@
  :builds {:main {:target :browser
                  :output-dir "resources/public/js/main"
                  :asset-path "/js/main"
-                 :modules {:main {:init-fn bakermath.core/init}}}}}
+                 :modules {:main {:init-fn doh.core/init}}}}}

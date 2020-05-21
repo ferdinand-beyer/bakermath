@@ -7,4 +7,5 @@
         :extra-deps {org.clojure/clojurescript {:mvn/version "1.10.758"}
                      thheller/shadow-cljs {:mvn/version "2.8.110"}
                      binaryage/devtools {:mvn/version "1.0.0"}}}
-  :watch {:main-opts ["-m" "shadow.cljs.devtools.cli" "watch" "main"]}}}
+  :watch {:main-opts ["-m" "shadow.cljs.devtools.cli" "watch" "main"]}
+  :release {:main-opts ["-m" "shadow.cljs.devtools.cli" "release" "main"]}}}

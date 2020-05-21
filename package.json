@@ -1,5 +1,5 @@
 {
-  "name": "bakermath",
+  "name": "doh",
   "version": "0.1.0",
   "description": "Baker's Percentages Calculator",
   "main": "index.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ferdinand-beyer/bakermath.git"
+    "url": "git+https://github.com/ferdinand-beyer/doh.git"
   },
   "keywords": [
     "baker",
@@ -19,9 +19,9 @@
   "author": "Ferdinand Beyer",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/ferdinand-beyer/bakermath/issues"
+    "url": "https://github.com/ferdinand-beyer/doh/issues"
   },
-  "homepage": "https://github.com/ferdinand-beyer/bakermath#readme",
+  "homepage": "https://github.com/ferdinand-beyer/doh#readme",
   "dependencies": {
     "@material-ui/core": "^4.9.12",
     "@material-ui/icons": "^4.9.1",

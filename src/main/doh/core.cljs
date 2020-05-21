@@ -1,12 +1,12 @@
-(ns bakermath.core
+(ns doh.core
   (:require [reagent.dom]
             [re-frame.core :as rf]
-            [bakermath.events :as e]
-            ; [bakermath.subs]
-            [bakermath.views]))
+            [doh.events :as e]
+            ; [doh.subs]
+            [doh.views]))
 
 (defn render! []
-  (reagent.dom/render [bakermath.views/root]
+  (reagent.dom/render [doh.views/root]
                       (.getElementById js/document "app")))
 
 (defn ^:dev/after-load refresh! []

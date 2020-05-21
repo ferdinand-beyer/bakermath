@@ -1,7 +1,7 @@
-(ns bakermath.views
-  (:require [bakermath.events :as e]
-            [bakermath.subs :as sub]
-            [bakermath.material-ui :as mui]
+(ns doh.views
+  (:require [doh.events :as e]
+            [doh.subs :as sub]
+            [doh.material-ui :as mui]
             [cljs.pprint :refer [pprint]]
             [re-frame.core :as rf]))
 

@@ -1,4 +1,4 @@
-(ns bakermath.db
+(ns doh.db
   (:require [cljs.spec.alpha :as s]))
 
 (s/def :ingredient/name string?)
