@@ -21,14 +21,14 @@
 (defn avatar-color [name]
   (str "hsl(" (-> name hash (mod 360)) ", 70%, 60%"))
 
-(defn dough-ingredient [{:keys [index ingredient dough-index]}]
-  (let [name (:ingredient/name ingredient)
-        quantity (:dough-ingredient/quantity ingredient)]
+(defn part-item [{:keys [mixture-index part-index part]}]
+  (let [name (:ingredient/name part)
+        quantity (:part/quantity part)]
     [mui/list-item
      {:button true
-      :on-click #(rf/dispatch [::e/edit-dough-ingredient
-                               {:dough-index dough-index
-                                :ingredient-index index}])}
+      :on-click #(rf/dispatch [::e/edit-part
+                               {:mixture-index mixture-index
+                                :part-index part-index}])}
      [mui/list-item-avatar
       [mui/avatar
        {:style {:background-color (avatar-color name)}}
@@ -38,43 +38,44 @@
      [mui/list-item-secondary-action
       [mui/icon-button
        {:edge :end
-        :on-click #(rf/dispatch [::e/delete-dough-ingredient dough-index index])}
+        :on-click #(rf/dispatch [::e/delete-part {:mixture-index mixture-index
+                                                  :part-index part-index}])}
        [mui/delete-icon]]]]))
 
-(defn dough [{:keys [index dough]}]
-  (let [ingredients @(rf/subscribe [::sub/dough-ingredients index])]
+(defn mixture [{:keys [mixture-index mixture]}]
+  (let [parts @(rf/subscribe [::sub/parts mixture-index])]
     [mui/list
-     [mui/list-subheader (:dough/name dough)]
-     (for [[i d] (indexed ingredients)]
-       ^{:key i} [dough-ingredient {:dough-index index
-                                    :index i
-                                    :ingredient d}])
+     [mui/list-subheader (:mixture/name mixture)]
+     (for [[i p] (indexed parts)]
+       ^{:key i} [part-item {:mixture-index mixture-index
+                             :part-index i
+                             :part p}])
      [mui/list-item
       {:button true
-       :on-click #(rf/dispatch [::e/edit-new-dough-ingredient
-                                {:dough-index index}])}
+       :on-click #(rf/dispatch [::e/edit-new-part
+                                {:mixture-index mixture-index}])}
       [mui/list-item-icon [mui/add-icon]]
       [mui/list-item-text "Add ingredient"]]]))
 
-(defn dough-list []
+(defn mixture-list []
   [:<>
-   (let [doughs @(rf/subscribe [::sub/doughs])]
-     (for [[i d] (indexed doughs)]
-       ^{:key i} [dough {:index i, :dough d}]))])
+   (let [mixtures @(rf/subscribe [::sub/mixtures])]
+     (for [[i m] (indexed mixtures)]
+       ^{:key i} [mixture {:mixture-index i, :mixture m}]))])
 
-(defn dough-ingredient-editor []
-  (when-let [editor @(rf/subscribe [::sub/dough-ingredient-editor])]
+(defn part-editor []
+  (when-let [editor @(rf/subscribe [::sub/part-editor])]
     (let [mode (:editor/mode editor)
           name (:ingredient/name editor)
-          quantity (:dough-ingredient/quantity editor)
-          cancel-fn #(rf/dispatch [::e/cancel-dough-ingredient-edit])]
+          quantity (:part/quantity editor)
+          cancel-fn #(rf/dispatch [::e/cancel-part-edit])]
       [mui/dialog
        {:open (:editor/visible editor)
         :on-close cancel-fn}
        [:form
         {:on-submit (fn [e]
                       (.preventDefault e)
-                      (rf/dispatch [::e/save-dough-ingredient-edit]))}
+                      (rf/dispatch [::e/save-part-edit]))}
         [mui/dialog-title {} (if (= mode :new)
                                "Add ingredient"
                                "Edit ingredient")]
@@ -84,7 +85,7 @@
            :auto-focus (= mode :new)
            :value name
            :on-change #(rf/dispatch-sync
-                        [::e/update-dough-ingredient-editor-name
+                        [::e/update-part-editor-name
                          (event-value %)])}]
          [mui/text-field
           {:label "Quantity"
@@ -92,7 +93,7 @@
            :auto-focus (= mode :edit)
            :value quantity
            :on-change #(rf/dispatch-sync
-                        [::e/update-dough-ingredient-editor-quantity
+                        [::e/update-part-editor-quantity
                          (event-value %)])}]]
         [mui/dialog-actions
          [mui/button
@@ -105,11 +106,11 @@
 
 (defn recipe-tab []
   [:<>
-   [dough-list]
-   [dough-ingredient-editor]])
+   [mixture-list]
+   [part-editor]])
 
 (defn table-tab []
-  (let [{:keys [columns data] :as table} @(rf/subscribe [::sub/table])]
+  (let [{:keys [columns data]} @(rf/subscribe [::sub/table])]
     [mui/table-container
      [mui/table
       [mui/table-head

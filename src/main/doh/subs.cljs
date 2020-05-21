@@ -6,42 +6,39 @@
  (fn [db _] db))
 
 (rf/reg-sub
- ::doughs
+ ::mixtures
  (fn [db _]
-   (:recipe/doughs db)))
+   (:recipe/mixtures db)))
 
 (rf/reg-sub
- ::dough-ingredient-editor
+ ::part-editor
  (fn [db _]
-   (:dough-ingredient-editor db)))
+   (:part-editor db)))
 
 (rf/reg-sub
- ::dough-ingredients
- :<- [::doughs]
- (fn [doughs [_ index]]
-   (get-in doughs [index :dough/ingredients])))
+ ::parts
+ :<- [::mixtures]
+ (fn [mixtures [_ index]]
+   (get-in mixtures [index :mixture/parts])))
 
 ;; TODO: Refactor!
 (rf/reg-sub
  ::table
- :<- [::doughs]
- (fn [doughs _]
+ :<- [::mixtures]
+ (fn [mixtures _]
    {:columns (concat [{:label "Ingredients"}]
-                     (map (fn [dough]
-                            {:label (:dough/name dough)})
-                          doughs)
+                     (for [mixture mixtures]
+                       {:label (:mixture/name mixture)})
                      [{:label "Total"}])
     :data
-    (let [cells (vec (repeat (count doughs) nil))]
-      (->> doughs
-           (mapcat (fn [i dough]
-                     (->> dough :dough/ingredients
-                          (map #(assoc % :dough/index i))))
+    (let [cells (vec (repeat (count mixtures) nil))]
+      (->> mixtures
+           (mapcat (fn [i mixture]
+                     (map #(assoc % :mixture/index i) (:mixture/parts mixture)))
                    (range))
            (group-by :ingredient/name)
-           (map (fn [[name ingredients]]
-                  (let [quantities (map (juxt :dough/index :dough-ingredient/quantity)
-                                        ingredients)
+           (map (fn [[name parts]]
+                  (let [quantities (map (juxt :mixture/index :part/quantity) parts)
                         total (reduce + (map second quantities))
                         cells (reduce #(apply assoc %1 %2) cells quantities)]
                     (concat [name] cells [total]))))

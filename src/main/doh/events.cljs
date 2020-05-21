@@ -12,8 +12,10 @@
 
 (def check-spec-interceptor (rf/after (partial check-and-throw ::db/db)))
 
-(defn dissoc-vec [coll index]
-  (vec (concat (subvec coll 0 index) (subvec coll (inc index)))))
+(defn dissoc-vec
+  "Remove an element by index from a vector."
+  [v index]
+  (vec (concat (subvec v 0 index) (subvec v (inc index)))))
 
 (rf/reg-event-db
  ::init-db
@@ -27,77 +29,67 @@
    (assoc db :recipe/tab tab)))
 
 (rf/reg-event-db
- ::edit-dough-ingredient
+ ::edit-part
  [check-spec-interceptor]
- (fn [db [_ {:keys [dough-index ingredient-index]}]]
+ (fn [db [_ {:keys [mixture-index part-index]}]]
    (let [{name :ingredient/name
-          quantity :dough-ingredient/quantity}
-         (get-in db [:recipe/doughs dough-index
-                     :dough/ingredients ingredient-index])]
-     (assoc db :dough-ingredient-editor
-            {:editor/dough-ref dough-index
-             :editor/ingredient-ref ingredient-index
+          quantity :part/quantity}
+         (get-in db [:recipe/mixtures mixture-index
+                     :mixture/parts part-index])]
+     (assoc db :part-editor
+            {:editor/mixture-index mixture-index
+             :editor/part-index part-index
              :editor/mode :edit
              :editor/visible true
              :ingredient/name name
-             :dough-ingredient/quantity quantity}))))
+             :part/quantity quantity}))))
 
 (rf/reg-event-db
- ::edit-new-dough-ingredient
+ ::edit-new-part
  [check-spec-interceptor]
- (fn [db [_ {:keys [dough-index]}]]
-   (assoc db :dough-ingredient-editor
-          {:editor/dough-ref dough-index
+ (fn [db [_ {:keys [mixture-index]}]]
+   (assoc db :part-editor
+          {:editor/mixture-index mixture-index
            :editor/mode :new
            :editor/visible true})))
 
 (rf/reg-event-db
- ::update-dough-ingredient-editor-name
+ ::update-part-editor-name
  [check-spec-interceptor]
  (fn [db [_ name]]
-   (assoc-in db [:dough-ingredient-editor :ingredient/name] name)))
+   (assoc-in db [:part-editor :ingredient/name] name)))
 
 (rf/reg-event-db
- ::update-dough-ingredient-editor-quantity
+ ::update-part-editor-quantity
  [check-spec-interceptor]
  (fn [db [_ quantity]]
-   (assoc-in db [:dough-ingredient-editor :dough-ingredient/quantity]
+   (assoc-in db [:part-editor :part/quantity]
              (int quantity))))
 
 (rf/reg-event-db
- ::cancel-dough-ingredient-edit
+ ::cancel-part-edit
  [check-spec-interceptor]
  (fn [db _]
-   (assoc-in db [:dough-ingredient-editor :editor/visible] false)))
+   (assoc-in db [:part-editor :editor/visible] false)))
 
-;; TODO: Refactor!
 (rf/reg-event-db
- ::save-dough-ingredient-edit
+ ::save-part-edit
  [check-spec-interceptor]
  (fn [db _]
-   (let [editor (:dough-ingredient-editor db)
-         ingredient (select-keys editor [:ingredient/name
-                                         :dough-ingredient/quantity])]
-     (case (:editor/mode editor)
-       :new
-       (-> db
-           (update-in [:recipe/doughs
-                       (:editor/dough-ref editor)
-                       :dough/ingredients]
-                      #(conj (vec %) ingredient))
-           (assoc-in [:dough-ingredient-editor :editor/visible] false))
-       :edit
-       (-> db
-           (update-in [:recipe/doughs
-                       (:editor/dough-ref editor)
-                       :dough/ingredients
-                       (:editor/ingredient-ref editor)]
-                      merge ingredient)
-           (assoc-in [:dough-ingredient-editor :editor/visible] false))))))
+   (let [{:editor/keys [mode mixture-index part-index] :as editor} (:part-editor db)
+         part (select-keys editor [:ingredient/name
+                                   :part/quantity])]
+     (cond-> db
+       (= :new mode) (update-in [:recipe/mixtures mixture-index :mixture/parts]
+                                (fnil #(conj % part) []))
+       (= :edit mode) (update-in [:recipe/mixtures mixture-index
+                                  :mixture/parts part-index]
+                                 merge part)
+       :finally (assoc-in [:part-editor :editor/visible] false)))))
 
 (rf/reg-event-db
- ::delete-dough-ingredient
+ ::delete-part
  [check-spec-interceptor]
- (fn [db [_ dough-index ingredient-index]]
-   (update-in db [:recipe/doughs dough-index :dough/ingredients]
-              dissoc-vec ingredient-index)))
+ (fn [db [_ {:keys [mixture-index part-index]}]]
+   (update-in db [:recipe/mixtures mixture-index :mixture/parts]
+              dissoc-vec part-index)))
