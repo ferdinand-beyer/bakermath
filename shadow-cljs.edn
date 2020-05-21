@@ -3,4 +3,7 @@
  :builds {:main {:target :browser
                  :output-dir "resources/public/js/main"
                  :asset-path "/js/main"
-                 :modules {:main {:init-fn doh.core/init}}}}}
+                 :modules {:main {:init-fn doh.core/init}}}
+          :test {:target :node-test
+                 :output-to "out/node-tests.js"
+                 :autorun true}}}

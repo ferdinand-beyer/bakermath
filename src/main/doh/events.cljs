@@ -3,24 +3,24 @@
             [cljs.spec.alpha :as s]
             [re-frame.core :as rf]))
 
-(defn check-and-throw
-  "Throws an exception if `val` doesn't match the Spec `spec`."
-  [spec val]
-  (when-not (s/valid? spec val)
-    (throw (ex-info (str "spec check failed")
-                    (s/explain-data spec val)))))
+(defn validate-db
+  [db]
+  (when-let [data (s/explain-data ::db/db db)]
+    (throw (ex-info (str "spec check failed") data))))
 
-(def check-spec-interceptor (rf/after (partial check-and-throw ::db/db)))
+(def check-spec-interceptor (rf/after validate-db))
 
 (defn dissoc-vec
   "Remove an element by index from a vector."
   [v index]
   (vec (concat (subvec v 0 index) (subvec v (inc index)))))
 
+(def init-db (constantly db/default-db))
+
 (rf/reg-event-db
  ::init-db
  [check-spec-interceptor]
- (constantly db/default-db))
+ init-db)
 
 (rf/reg-event-db
  ::select-recipe-tab

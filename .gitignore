@@ -7,4 +7,5 @@ node_modules/
 .nrepl-port
 
 # Application
+/out
 /resources/public/js
