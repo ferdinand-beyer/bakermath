@@ -66,7 +66,8 @@
  [check-spec-interceptor]
  (fn [db [_ quantity]]
    (assoc-in db [:part-editor :part/quantity]
-             (int quantity))))
+             ;; TODO: Express everything in milligrams?
+             (float quantity))))
 
 (rf/reg-event-db
  ::cancel-part-edit

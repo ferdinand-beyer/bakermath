@@ -119,6 +119,7 @@
            [mui/text-field
             {:label "Quantity"
              :type :number
+             :input-props {:min 0.01}
              :full-width true
              :auto-focus (= mode :edit)
              :value quantity
