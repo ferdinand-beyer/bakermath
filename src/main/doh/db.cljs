@@ -17,7 +17,7 @@
   (s/keys :req [:part/ingredient-id
                 :part/quantity]))
 
-(s/def :editor/visible boolean?)
+(s/def :editor/visible? boolean?)
 (s/def :editor/mode #{:new :edit})
 (s/def :editor/mixture-index nat-int?)
 (s/def :editor/part-index nat-int?)
@@ -39,25 +39,23 @@
   (s/keys :req [:recipe/name]
           :opt [:recipe/mixtures :recipe/tab]))
 
-(defmulti editor-mode :editor/mode)
-
-(defmethod editor-mode :new [_]
-  (s/keys :req [:editor/visible
+(s/def ::part-editor-default
+  (s/keys :req [:editor/visible?
                 :editor/mode
                 :editor/mixture-index]
           :opt [:ingredient/name
                 :part/ingredient-id
                 :part/quantity]))
 
-(defmethod editor-mode :edit [_]
-  (s/keys :req [:editor/visible
-                :editor/mode
-                :editor/mixture-index
-                :editor/part-index]
-          :opt [:ingredient/name
-                :part/quantity]))
+(defmulti part-editor-mode :editor/mode)
 
-(s/def ::part-editor (s/multi-spec editor-mode :editor/mode))
+(defmethod part-editor-mode :new [_]
+  ::part-editor-default)
+
+(defmethod part-editor-mode :edit [_]
+  (s/merge ::part-editor-default (s/keys :req [:editor/part-index])))
+
+(s/def ::part-editor (s/multi-spec part-editor-mode :editor/mode))
 
 (s/def ::root
   (s/keys :opt-un [::ingredients

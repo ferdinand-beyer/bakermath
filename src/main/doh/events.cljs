@@ -41,7 +41,7 @@
             {:editor/mixture-index mixture-index
              :editor/part-index part-index
              :editor/mode :edit
-             :editor/visible true
+             :editor/visible? true
              :ingredient/name name
              :part/ingredient-id ingredient-id
              :part/quantity quantity}))))
@@ -53,7 +53,7 @@
    (assoc db :part-editor
           {:editor/mixture-index mixture-index
            :editor/mode :new
-           :editor/visible true})))
+           :editor/visible? true})))
 
 (rf/reg-event-db
  ::update-part-editor-name
@@ -73,7 +73,7 @@
  ::cancel-part-edit
  [check-spec-interceptor]
  (fn [db _]
-   (assoc-in db [:part-editor :editor/visible] false)))
+   (assoc-in db [:part-editor :editor/visible?] false)))
 
 (defn save-ingredient
   [db name]
@@ -103,7 +103,7 @@
       (= :edit mode) (update-in [:recipe/mixtures mixture-index
                                  :mixture/parts part-index]
                                 merge part)
-      :finally (assoc-in [:part-editor :editor/visible] false))))
+      :finally (assoc-in [:part-editor :editor/visible?] false))))
 
 (rf/reg-event-db
  ::save-part-edit

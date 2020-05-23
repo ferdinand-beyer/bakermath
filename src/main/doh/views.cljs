@@ -70,7 +70,7 @@
 (defn part-editor
   "Renders the part editor."
   []
-  (when-let [{:editor/keys [mode visible]
+  (when-let [{:editor/keys [mode visible?]
               :part/keys [ingredient-id quantity]
               :ingredient/keys [name]}
              @(rf/subscribe [::sub/part-editor])]
@@ -82,7 +82,7 @@
                        clj->js)
           option-fn #(:ingredient/name (get ingredients %))]
       [mui/dialog
-       {:open visible
+       {:open visible?
         :on-close cancel-fn
         :max-width :xs
         :full-width true}
