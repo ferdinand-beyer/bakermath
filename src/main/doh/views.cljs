@@ -143,23 +143,37 @@
    [mixture-list]
    [part-editor]])
 
+(defn format% [n]
+  (str (.toFixed n 2) "%"))
+
 (defn table-tab
   "Renders the 'Table' tab."
   []
-  (let [{:keys [columns data]} @(rf/subscribe [::sub/table])
-        flour-weight @(rf/subscribe [::sub/flour-weight])]
+  (let [mixtures @(rf/subscribe [::sub/mixture-names])
+        ingredient-weights @(rf/subscribe [::sub/ingredient-weights])]
     [mui/table-container
      [mui/table
       [mui/table-head
        [mui/table-row
-        (for [[i {:keys [label]}] (indexed columns)]
-          ^{:key i} [mui/table-cell label])]]
+        [mui/table-cell "Ingredient"]
+        (for [{:mixture/keys [index name]} mixtures]
+          ^{:key index} [mui/table-cell {:align :right} name])
+        [mui/table-cell {:align :right} "Total"]
+        [mui/table-cell {:align :right} "Percentage"]]]
       [mui/table-body
-       (for [[i cells] (indexed data)]
-         ^{:key i}
+       (for [{:keys [id name flour-proportion weights total percentage]}
+             ingredient-weights]
+         ^{:key id}
          [mui/table-row
-          (for [[i label] (indexed cells)]
-            ^{:key i} [mui/table-cell label])])]]]))
+          {:hover true}
+          [mui/table-cell
+           name 
+           (when flour-proportion [:strong " (F)"])]
+          (for [{:mixture/keys [index]} mixtures]
+            ^{:key index}
+            [mui/table-cell {:align :right} (get weights index)])
+          [mui/table-cell {:align :right} total]
+          [mui/table-cell {:align :right} (format% percentage)]])]]]))
 
 (def app
   (mui/with-styles
@@ -190,9 +204,7 @@
            [mui/tab {:value :recipe
                      :label "Recipe"}]
            [mui/tab {:value :table
-                     :label "Table"}]
-           [mui/tab {:value :ingredients
-                     :label "Ingredients"}]]]
+                     :label "Table"}]]]
          (case tab
            :recipe [recipe-tab]
            :table [table-tab]

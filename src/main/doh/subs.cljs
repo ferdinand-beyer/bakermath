@@ -37,7 +37,15 @@
  ::mixtures
  :<- [::recipe]
  (fn [recipe _]
-   (:recipe/mixtures recipe)))
+   (->> (:recipe/mixtures recipe)
+        (mapv #(assoc %2 :mixture/index %1) (range)))))
+
+(rf/reg-sub
+ ::mixture-names
+ :<- [::mixtures]
+ (fn [mixtures _]
+   (mapv #(select-keys % [:mixture/index, :mixture/name])
+         mixtures)))
 
 (rf/reg-sub
  ::parts
@@ -58,34 +66,32 @@
                     (map #(apply * %)))
               + mixtures)))
 
-;; TODO: Refactor!
 (rf/reg-sub
- ::table
+ ::ingredient-weights
  :<- [::mixtures]
  :<- [::ingredients]
  :<- [::flour-weight]
  (fn [[mixtures ingredients flour-weight] _]
-   {:columns (concat [{:label "Ingredients"}]
-                     (for [mixture mixtures]
-                       {:label (:mixture/name mixture)})
-                     [{:label "Total"}
-                      {:label "Percentage"}])
-    :data
-    (let [cells (vec (repeat (count mixtures) nil))]
-      (->> mixtures
-           (mapcat (fn [i mixture]
-                     (map #(assoc % :mixture/index i) (:mixture/parts mixture)))
-                   (range))
-           (group-by :part/ingredient-id)
-           (map (fn [[id parts]]
-                  (let [name (get-in ingredients [id :ingredient/name])
-                        quantities (map (juxt :mixture/index :part/quantity) parts)
-                        total (reduce + (map second quantities))
-                        percentage (if (pos? flour-weight)
-                                     (* 100 (/ total flour-weight))
-                                     0)
-                        cells (reduce (fn [cells [index qty]]
-                                        (update cells index + qty))
-                                      cells quantities)]
-                    (concat [name] cells [total (str (.toFixed percentage 2) "%")]))))
-           (sort-by first)))}))
+   (->> mixtures
+        (mapcat (fn [mixture]
+                  (let [index (:mixture/index mixture)]
+                    (map #(assoc % :mixture/index index)
+                         (:mixture/parts mixture)))))
+        (group-by :part/ingredient-id)
+        (map (fn [[id parts]]
+               (let [weights (reduce (fn [mw {index :mixture/index
+                                              qty :part/quantity}]
+                                       (update mw index + qty))
+                                     {} parts)
+                     total (reduce + (map second weights))
+                     percentage (if (pos? flour-weight)
+                                  (* 100 (/ total flour-weight))
+                                  0)]
+                 {:id id
+                  :name (get-in ingredients [id :ingredient/name])
+                  :flour-proportion (get-in ingredients [id :ingredient/flour-proportion])
+                  :weights weights
+                  :total total
+                  :percentage percentage})))
+        (sort-by :name)
+        vec)))
