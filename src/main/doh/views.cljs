@@ -9,20 +9,20 @@
 
 (def indexed (partial map vector (range)))
 
-(defn debug [x]
-  [:pre (with-out-str (pprint x))])
+(defn debug [& args]
+  [:pre (for [x args] (with-out-str (pprint x)))])
 
 (defn event-value
   [^js/Event e]
   (let [^js/HTMLInputElement el (.-target e)]
     (.-value el)))
 
-;; TODO compute in sub!
-(defn avatar-color [name]
-  (str "hsl(" (-> name hash (mod 360)) ", 70%, 60%"))
-
-(defn part-item [{:keys [mixture-index part-index part]}]
-  (let [name (:ingredient/name part)
+(defn part-list-item
+  "Renders a list item for a mixture part."
+  [{:keys [mixture-index part-index part]}]
+  (let [ingredient-id (:part/ingredient-id part)
+        ingredient @(rf/subscribe [::sub/ingredient ingredient-id])
+        name (:ingredient/name ingredient)
         quantity (:part/quantity part)]
     [mui/list-item
      {:button true
@@ -31,7 +31,7 @@
                                 :part-index part-index}])}
      [mui/list-item-avatar
       [mui/avatar
-       {:style {:background-color (avatar-color name)}}
+       {:style {:background-color (:avatar/color ingredient)}}
        (-> name (.substr 0 1) .toUpperCase)]]
      [mui/list-item-text {:primary name
                           :secondary quantity}]
@@ -42,14 +42,16 @@
                                                   :part-index part-index}])}
        [mui/delete-icon]]]]))
 
-(defn mixture [{:keys [mixture-index mixture]}]
+(defn mixture
+  "Renders a mixture as a list of its parts."
+  [{:keys [mixture-index mixture]}]
   (let [parts @(rf/subscribe [::sub/parts mixture-index])]
     [mui/list
      [mui/list-subheader (:mixture/name mixture)]
      (for [[i p] (indexed parts)]
-       ^{:key i} [part-item {:mixture-index mixture-index
-                             :part-index i
-                             :part p}])
+       ^{:key i} [part-list-item {:mixture-index mixture-index
+                                  :part-index i
+                                  :part p}])
      [mui/list-item
       {:button true
        :on-click #(rf/dispatch [::e/edit-new-part
@@ -57,20 +59,30 @@
       [mui/list-item-icon [mui/add-icon]]
       [mui/list-item-text "Add ingredient"]]]))
 
-(defn mixture-list []
+(defn mixture-list
+  "Renders a list of mixtures."
+  []
   [:<>
    (let [mixtures @(rf/subscribe [::sub/mixtures])]
      (for [[i m] (indexed mixtures)]
        ^{:key i} [mixture {:mixture-index i, :mixture m}]))])
 
-(defn part-editor []
-  (when-let [editor @(rf/subscribe [::sub/part-editor])]
-    (let [mode (:editor/mode editor)
-          name (:ingredient/name editor)
-          quantity (:part/quantity editor)
-          cancel-fn #(rf/dispatch [::e/cancel-part-edit])]
+(defn part-editor
+  "Renders the part editor."
+  []
+  (when-let [{:editor/keys [mode visible]
+              :part/keys [ingredient-id quantity]
+              :ingredient/keys [name]}
+             @(rf/subscribe [::sub/part-editor])]
+    (let [ingredients @(rf/subscribe [::sub/ingredients])
+          cancel-fn #(rf/dispatch [::e/cancel-part-edit])
+          options (->> ingredients
+                       (sort-by #(:ingredient/name (val %)))
+                       (map key)
+                       clj->js)
+          option-fn #(:ingredient/name (get ingredients %))]
       [mui/dialog
-       {:open (:editor/visible editor)
+       {:open visible
         :on-close cancel-fn}
        [:form
         {:on-submit (fn [e]
@@ -80,13 +92,19 @@
                                "Add ingredient"
                                "Edit ingredient")]
         [mui/dialog-content
-         [mui/text-field
-          {:label "Ingredient"
-           :auto-focus (= mode :new)
-           :value name
-           :on-change #(rf/dispatch-sync
-                        [::e/update-part-editor-name
-                         (event-value %)])}]
+         [debug name ingredient-id]
+         [mui/autocomplete
+          ;; TODO: Better interop story...
+          {:options options
+           :get-option-label option-fn
+           :value ingredient-id
+           :free-solo true
+           :disable-clearable true
+           :input-value (or name "")
+           :on-input-change (fn [_ val _]
+                              (rf/dispatch-sync [::e/update-part-editor-name val]))
+           :text-field-props {:label "Ingredient"
+                              :autoFocus (= mode :new)}}]
          [mui/text-field
           {:label "Quantity"
            :type :number
@@ -104,12 +122,16 @@
            :type :submit}
           "Save"]]]])))
 
-(defn recipe-tab []
+(defn recipe-tab
+  "Renders the 'Recipe' tab."
+  []
   [:<>
    [mixture-list]
    [part-editor]])
 
-(defn table-tab []
+(defn table-tab
+  "Renders the 'Table' tab."
+  []
   (let [{:keys [columns data]} @(rf/subscribe [::sub/table])]
     [mui/table-container
      [mui/table

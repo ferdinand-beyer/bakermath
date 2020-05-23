@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [list])
   (:require
    [reagent.core :as r]
+   [goog.object :as gobj]
 
    ["@material-ui/core/AppBar" :as app-bar]
    ["@material-ui/core/Avatar" :as avatar]
@@ -55,19 +56,18 @@
 
 (set! *warn-on-infer* true)
 
+(defn- map-input-props [props]
+  (assoc (dissoc props :inputRef) :ref (:inputRef props)))
+
 (def ^:private -input
   (r/reactify-component
    (fn [props]
-     [:input (-> props
-                 (assoc :ref (:inputRef props))
-                 (dissoc :inputRef))])))
+     [:input (map-input-props props)])))
 
 (def ^:private -textarea
   (r/reactify-component
    (fn [props]
-     [:textarea (-> props
-                    (assoc :ref (:inputRef props))
-                    (dissoc :inputRef))])))
+     [:textarea (map-input-props props)])))
 
 (def ^:private -text-field (r/adapt-react-class text-field/default))
 
@@ -82,6 +82,22 @@
     (into
      [-text-field (assoc-in props [:InputProps :inputComponent] input)]
      children)))
+
+(def ^:private -autocomplete (r/adapt-react-class autocomplete/default))
+
+;; TODO: Handle options nicer
+(defn autocomplete [props & children]
+  (let [tf-props (:text-field-props props)
+        render-input (fn [^js params]
+                       ;; TODO: These are expected to be camel-case
+                       (doseq [[k v] tf-props]
+                         (gobj/set params (key->js k) (clj->js v)))
+                       (set! (.-inputComponent (.-InputProps params)) -input)
+                       (r/create-element text-field/default params))
+        props (-> props
+                  (dissoc :text-field-props)
+                  (assoc :render-input render-input))]
+    (into [-autocomplete props] children)))
 
 (def app-bar (r/adapt-react-class app-bar/default))
 (def avatar (r/adapt-react-class avatar/default))
@@ -147,7 +163,7 @@
 
 (defn with-styles
   "Apply Material-UI styles to a Reagent component.  Translates between
-   React / JavaScript and Reagent / ClojureScript; styles and classes
+   React/JavaScript and Reagent/ClojureScript; styles and classes
    will be ClojureScript maps."
   ([styles]
    (let [hoc (withStyles (if (fn? styles)
