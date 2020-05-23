@@ -92,7 +92,6 @@
                                "Add ingredient"
                                "Edit ingredient")]
         [mui/dialog-content
-         [debug name ingredient-id]
          [mui/autocomplete
           ;; TODO: Better interop story...
           {:options options
