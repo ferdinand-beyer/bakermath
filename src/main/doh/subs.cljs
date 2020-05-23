@@ -45,16 +45,31 @@
  (fn [mixtures [_ index]]
    (get-in mixtures [index :mixture/parts])))
 
+(rf/reg-sub
+ ::flour-weight
+ :<- [::mixtures]
+ :<- [::ingredients]
+ (fn [[mixtures ingredients] _]
+   (transduce (comp (mapcat :mixture/parts)
+                    (map #(merge % (get ingredients (:part/ingredient-id %))))
+                    (filter :ingredient/flour-proportion)
+                    (map (juxt :ingredient/flour-proportion
+                               :part/quantity))
+                    (map #(apply * %)))
+              + mixtures)))
+
 ;; TODO: Refactor!
 (rf/reg-sub
  ::table
  :<- [::mixtures]
  :<- [::ingredients]
- (fn [[mixtures ingredients] _]
+ :<- [::flour-weight]
+ (fn [[mixtures ingredients flour-weight] _]
    {:columns (concat [{:label "Ingredients"}]
                      (for [mixture mixtures]
                        {:label (:mixture/name mixture)})
-                     [{:label "Total"}])
+                     [{:label "Total"}
+                      {:label "Percentage"}])
     :data
     (let [cells (vec (repeat (count mixtures) nil))]
       (->> mixtures
@@ -66,6 +81,11 @@
                   (let [name (get-in ingredients [id :ingredient/name])
                         quantities (map (juxt :mixture/index :part/quantity) parts)
                         total (reduce + (map second quantities))
-                        cells (reduce #(apply assoc %1 %2) cells quantities)]
-                    (concat [name] cells [total]))))
+                        percentage (if (pos? flour-weight)
+                                     (* 100 (/ total flour-weight))
+                                     0)
+                        cells (reduce (fn [cells [index qty]]
+                                        (update cells index + qty))
+                                      cells quantities)]
+                    (concat [name] cells [total (str (.toFixed percentage 2) "%")]))))
            (sort-by first)))}))

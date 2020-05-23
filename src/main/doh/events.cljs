@@ -67,7 +67,7 @@
  (fn [db [_ quantity]]
    (assoc-in db [:part-editor :part/quantity]
              ;; TODO: Express everything in milligrams?
-             (float quantity))))
+             (js/parseFloat quantity))))
 
 (rf/reg-event-db
  ::cancel-part-edit

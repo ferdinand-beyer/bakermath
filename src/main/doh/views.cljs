@@ -148,20 +148,18 @@
   []
   (let [{:keys [columns data]} @(rf/subscribe [::sub/table])
         flour-weight @(rf/subscribe [::sub/flour-weight])]
-    [:<>
-     [debug flour-weight]
-     [mui/table-container
-      [mui/table
-       [mui/table-head
-        [mui/table-row
-         (for [[i {:keys [label]}] (indexed columns)]
-           ^{:key i} [mui/table-cell label])]]
-       [mui/table-body
-        (for [[i cells] (indexed data)]
-          ^{:key i}
-          [mui/table-row
-           (for [[i label] (indexed cells)]
-             ^{:key i} [mui/table-cell label])])]]]]))
+    [mui/table-container
+     [mui/table
+      [mui/table-head
+       [mui/table-row
+        (for [[i {:keys [label]}] (indexed columns)]
+          ^{:key i} [mui/table-cell label])]]
+      [mui/table-body
+       (for [[i cells] (indexed data)]
+         ^{:key i}
+         [mui/table-row
+          (for [[i label] (indexed cells)]
+            ^{:key i} [mui/table-cell label])])]]]))
 
 (def app
   (mui/with-styles
