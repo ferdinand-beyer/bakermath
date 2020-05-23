@@ -15,6 +15,8 @@
    ["@material-ui/core/DialogContent" :as dialog-content]
    ["@material-ui/core/DialogContentText" :as dialog-content-text]
    ["@material-ui/core/DialogTitle" :as dialog-title]
+   
+   ["@material-ui/core/Grid" :as grid]
 
    ["@material-ui/core/IconButton" :as icon-button]
    ["@material-ui/core/InputAdornment" :as input-adornment]
@@ -111,6 +113,8 @@
 (def dialog-content (r/adapt-react-class dialog-content/default))
 (def dialog-content-text (r/adapt-react-class dialog-content-text/default))
 (def dialog-title (r/adapt-react-class dialog-title/default))
+
+(def grid (r/adapt-react-class grid/default))
 
 (def icon-button (r/adapt-react-class icon-button/default))
 

@@ -83,7 +83,9 @@
           option-fn #(:ingredient/name (get ingredients %))]
       [mui/dialog
        {:open visible
-        :on-close cancel-fn}
+        :on-close cancel-fn
+        :max-width :xs
+        :full-width true}
        [:form
         {:on-submit (fn [e]
                       (.preventDefault e)
@@ -92,26 +94,37 @@
                                "Add ingredient"
                                "Edit ingredient")]
         [mui/dialog-content
-         [mui/autocomplete
-          ;; TODO: Better interop story...
-          {:options options
-           :get-option-label option-fn
-           :value ingredient-id
-           :free-solo true
-           :disable-clearable true
-           :input-value (or name "")
-           :on-input-change (fn [_ val _]
-                              (rf/dispatch-sync [::e/update-part-editor-name val]))
-           :text-field-props {:label "Ingredient"
-                              :autoFocus (= mode :new)}}]
-         [mui/text-field
-          {:label "Quantity"
-           :type :number
-           :auto-focus (= mode :edit)
-           :value quantity
-           :on-change #(rf/dispatch-sync
-                        [::e/update-part-editor-quantity
-                         (event-value %)])}]]
+         [mui/grid
+          {:container true
+           :spacing 2}
+          [mui/grid
+           {:item true
+            :xs 8}
+           [mui/autocomplete
+            ;; TODO: Better interop story...
+            {:options options
+             :get-option-label option-fn
+             :value ingredient-id
+             :free-solo true
+             :disable-clearable true
+             :input-value (or name "")
+             :on-input-change (fn [_ val _]
+                                (rf/dispatch-sync [::e/update-part-editor-name val]))
+             :text-field-props {:label "Ingredient"
+                                :autoFocus (= mode :new)
+                                :fullWidth true}}]]
+          [mui/grid
+           {:item true
+            :xs 4}
+           [mui/text-field
+            {:label "Quantity"
+             :type :number
+             :full-width true
+             :auto-focus (= mode :edit)
+             :value quantity
+             :on-change #(rf/dispatch-sync
+                          [::e/update-part-editor-quantity
+                           (event-value %)])}]]]]
         [mui/dialog-actions
          [mui/button
           {:on-click cancel-fn}
