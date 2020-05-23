@@ -136,12 +136,22 @@
            :type :submit}
           "Save"]]]])))
 
-(defn recipe-tab
-  "Renders the 'Recipe' tab."
-  []
-  [:<>
-   [mixture-list]
-   [part-editor]])
+(def recipe-tab
+  (mui/with-styles
+    (fn [theme]
+      (let [spacing (.spacing theme 2)]
+        {:root {}
+         :fab {:position :fixed
+               :bottom spacing
+               :right spacing}}))
+    (fn [{:keys [classes]}]
+      [:div {:class (:root classes)}
+       [mixture-list]
+       [part-editor]
+       [mui/fab
+        {:class (:fab classes)
+         :color :secondary}
+        [mui/add-icon]]])))
 
 (defn format% [n]
   (str (.toFixed n 2) "%"))
