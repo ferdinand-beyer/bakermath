@@ -119,7 +119,8 @@
            [mui/text-field
             {:label "Quantity"
              :type :number
-             :input-props {:min 0.01}
+             :input-props {:min 0.01
+                           :step 0.01}
              :full-width true
              :auto-focus (= mode :edit)
              :value quantity
@@ -145,19 +146,22 @@
 (defn table-tab
   "Renders the 'Table' tab."
   []
-  (let [{:keys [columns data]} @(rf/subscribe [::sub/table])]
-    [mui/table-container
-     [mui/table
-      [mui/table-head
-       [mui/table-row
-        (for [[i {:keys [label]}] (indexed columns)]
-          ^{:key i} [mui/table-cell label])]]
-      [mui/table-body
-       (for [[i cells] (indexed data)]
-         ^{:key i}
-         [mui/table-row
-          (for [[i label] (indexed cells)]
-            ^{:key i} [mui/table-cell label])])]]]))
+  (let [{:keys [columns data]} @(rf/subscribe [::sub/table])
+        flour-weight @(rf/subscribe [::sub/flour-weight])]
+    [:<>
+     [debug flour-weight]
+     [mui/table-container
+      [mui/table
+       [mui/table-head
+        [mui/table-row
+         (for [[i {:keys [label]}] (indexed columns)]
+           ^{:key i} [mui/table-cell label])]]
+       [mui/table-body
+        (for [[i cells] (indexed data)]
+          ^{:key i}
+          [mui/table-row
+           (for [[i label] (indexed cells)]
+             ^{:key i} [mui/table-cell label])])]]]]))
 
 (def app
   (mui/with-styles
