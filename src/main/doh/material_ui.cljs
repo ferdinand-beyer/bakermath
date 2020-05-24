@@ -52,6 +52,7 @@
    ["@material-ui/icons/Add" :as add-icon]
    ["@material-ui/icons/ArrowBack" :as arrow-back-icon]
    ["@material-ui/icons/Delete" :as delete-icon]
+   ["@material-ui/icons/MoreVert" :as more-vert-icon]
 
    ["@material-ui/core/styles" :refer [ThemeProvider createMuiTheme withStyles]]
    ["@material-ui/core/colors" :as mui-colors]))
@@ -148,6 +149,7 @@
 (def add-icon (r/adapt-react-class add-icon/default))
 (def arrow-back-icon (r/adapt-react-class arrow-back-icon/default))
 (def delete-icon (r/adapt-react-class delete-icon/default))
+(def more-vert-icon (r/adapt-react-class more-vert-icon/default))
 
 (def theme-provider (r/adapt-react-class ThemeProvider))
 

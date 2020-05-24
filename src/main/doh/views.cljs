@@ -42,22 +42,41 @@
                                                   :part-index part-index}])}
        [mui/delete-icon]]]]))
 
+(def mixture-header
+  (mui/with-styles
+    {:grow {:flex-grow 1}}
+    (fn [{:keys [label classes]}]
+      [mui/tool-bar
+       {:class (:grow classes)
+        :disable-gutters false}
+       [mui/typography
+        {:class (:grow classes)
+         :variant :subtitle1}
+        label]
+       [mui/icon-button
+        [mui/add-icon]]
+       [mui/icon-button
+        {:edge :end}
+        [mui/more-vert-icon]]])))
+
 (defn mixture
   "Renders a mixture as a list of its parts."
   [{:keys [mixture-index mixture]}]
   (let [parts @(rf/subscribe [::sub/parts mixture-index])]
-    [mui/list
-     [mui/list-subheader (:mixture/name mixture)]
-     (for [[i p] (indexed parts)]
-       ^{:key i} [part-list-item {:mixture-index mixture-index
-                                  :part-index i
-                                  :part p}])
-     [mui/list-item
-      {:button true
-       :on-click #(rf/dispatch [::e/edit-new-part
-                                {:mixture-index mixture-index}])}
-      [mui/list-item-icon [mui/add-icon]]
-      [mui/list-item-text "Add ingredient"]]]))
+    [:div
+     [mixture-header {:label (:mixture/name mixture)}]
+     [mui/list
+      #_[mui/list-subheader (:mixture/name mixture)]
+      (for [[i p] (indexed parts)]
+        ^{:key i} [part-list-item {:mixture-index mixture-index
+                                   :part-index i
+                                   :part p}])
+      [mui/list-item
+       {:button true
+        :on-click #(rf/dispatch [::e/edit-new-part
+                                 {:mixture-index mixture-index}])}
+       [mui/list-item-icon [mui/add-icon]]
+       [mui/list-item-text "Add ingredient"]]]]))
 
 (defn mixture-list
   "Renders a list of mixtures."
@@ -72,12 +91,11 @@
   [{:keys [value input-value on-change]
     :as props}]
   (let [options @(rf/subscribe [::sub/ingredient-options])
-        ids (clj->js (map :ingredient/id options))
-        id->label #(:ingredient/name (get options %))]
+        id->label (into {} (map (juxt :ingredient/id :ingredient/name) options))]
     ;; TODO: Better interop story...
     [mui/autocomplete
-     {:options ids
-      :get-option-label id->label
+     {:options (clj->js (map :ingredient/id options))
+      :get-option-label #(id->label %)
       :value value
       :free-solo true
       :disable-clearable true
