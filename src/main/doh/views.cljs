@@ -67,6 +67,25 @@
      (for [[i m] (indexed mixtures)]
        ^{:key i} [mixture {:mixture-index i, :mixture m}]))])
 
+(defn ingredient-input
+  "Renders an ingredient selection input control."
+  [{:keys [value input-value on-change]
+    :as props}]
+  (let [options @(rf/subscribe [::sub/ingredient-options])
+        ids (clj->js (map :ingredient/id options))
+        id->label #(:ingredient/name (get options %))]
+    ;; TODO: Better interop story...
+    [mui/autocomplete
+     {:options ids
+      :get-option-label id->label
+      :value value
+      :free-solo true
+      :disable-clearable true
+      :input-value (or input-value (id->label value) "")
+      :on-input-change (fn [evt val _]
+                         (when on-change (on-change evt val)))
+      :text-field-props (dissoc props :value :input-value :on-change)}]))
+
 (defn part-editor
   "Renders the part editor."
   []
@@ -74,13 +93,7 @@
               :part/keys [ingredient-id quantity]
               :ingredient/keys [name]}
              @(rf/subscribe [::sub/part-editor])]
-    (let [ingredients @(rf/subscribe [::sub/ingredients])
-          cancel-fn #(rf/dispatch [::e/cancel-part-edit])
-          options (->> ingredients
-                       (sort-by #(:ingredient/name (val %)))
-                       (map key)
-                       clj->js)
-          option-fn #(:ingredient/name (get ingredients %))]
+    (let [cancel-fn #(rf/dispatch [::e/cancel-part-edit])]
       [mui/dialog
        {:open visible?
         :on-close cancel-fn
@@ -100,19 +113,13 @@
           [mui/grid
            {:item true
             :xs 8}
-           [mui/autocomplete
-            ;; TODO: Better interop story...
-            {:options options
-             :get-option-label option-fn
+           [ingredient-input
+            {:label "Ingredient"
+             :autoFocus (= mode :new)
+             :fullWidth true
              :value ingredient-id
-             :free-solo true
-             :disable-clearable true
-             :input-value (or name "")
-             :on-input-change (fn [_ val _]
-                                (rf/dispatch-sync [::e/update-part-editor-name val]))
-             :text-field-props {:label "Ingredient"
-                                :autoFocus (= mode :new)
-                                :fullWidth true}}]]
+             :input-value name
+             :on-change #(rf/dispatch-sync [::e/update-part-editor-name %2])}]]
           [mui/grid
            {:item true
             :xs 4}
@@ -181,7 +188,9 @@
            (when flour-proportion [:strong " (F)"])]
           (for [{:mixture/keys [index]} mixtures]
             ^{:key index}
-            [mui/table-cell {:align :right} (get weights index)])
+            [mui/table-cell
+             {:align :right}
+             (get weights index)])
           [mui/table-cell {:align :right} total]
           [mui/table-cell {:align :right} (format% percentage)]])]]]))
 

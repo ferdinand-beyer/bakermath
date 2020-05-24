@@ -22,8 +22,10 @@
  ::ingredient-options
  :<- [::ingredients]
  (fn [ingredients _]
-   (for [[k v] ingredients]
-     (assoc v :ingredient/id k))))
+   (->> (for [[k v] ingredients]
+          (assoc v :ingredient/id k))
+        (sort-by :ingredient/name)
+        vec)))
 
 (rf/reg-sub
  ::ingredient
