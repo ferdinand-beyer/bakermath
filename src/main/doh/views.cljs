@@ -180,20 +180,26 @@
          :color :secondary}
         [mui/add-icon]]])))
 
-(defn format% [n]
-  (str (.toFixed n 2) "%"))
+(defn ingredient-cell
+  [{:keys [ingredient-id]}]
+  (let [{:ingredient/keys [name flour-proportion]}
+        @(rf/subscribe [::sub/ingredient ingredient-id])]
+    [mui/table-cell
+     name
+     (when flour-proportion [:strong " (F)"])]))
 
-;; TODO: Need to update the weight!
 (defn part-weight-cell
-  [{mixture-index :mixture/index
-    part-index :part/index
-    weight :part/quantity}]
-  (let [part-ident {:mixture-index mixture-index
+  [{:keys [ingredient-id mixture-index]}]
+  (let [part-index @(rf/subscribe [::sub/ingredient-part-index
+                                   ingredient-id
+                                   mixture-index])
+        part-ident {:mixture-index mixture-index
                     :part-index part-index}
         !element (atom nil)
+        weight (rf/subscribe [::sub/ingredient-weight ingredient-id mixture-index])
         editor (rf/subscribe [::pw-ed/editor part-ident])]
     (fn [_]
-      (let [editor @editor
+      (let [{:keys [editing? input]} @editor
             cancel-fn #(rf/dispatch [::pw-ed/cancel-edit part-ident])]
         [mui/table-cell
          {:align :right}
@@ -201,9 +207,9 @@
           {:color :secondary
            :ref #(reset! !element %)
            :on-click #(rf/dispatch [::pw-ed/start-edit part-ident])}
-          (or weight "0")]
+          @weight]
          [mui/popover
-          {:open (:editing? editor)
+          {:open editing?
            :anchorEl @!element
            :anchor-origin {:horizontal :center
                            :vertical :bottom}
@@ -218,7 +224,7 @@
             [mui/text-field
              {:label "Weight"
               :type :number
-              :value (:input editor)
+              :value input
               :on-change #(rf/dispatch-sync [::pw-ed/enter-weight part-ident (event-value %)])
               :auto-focus true}]]
            [mui/dialog-actions
@@ -230,11 +236,24 @@
               :type :submit}
              "Save"]]]]]))))
 
+(defn ingredient-total-cell
+  [{:keys [ingredient-id]}]
+  (let [total @(rf/subscribe [::sub/ingredient-total ingredient-id])]
+    [mui/table-cell {:align :right} total]))
+
+(defn format% [n]
+  (str (.toFixed n 2) "%"))
+
+(defn ingredient-percentage-cell
+  [{:keys [ingredient-id]}]
+  (let [percentage @(rf/subscribe [::sub/ingredient-percentage ingredient-id])]
+    [mui/table-cell {:align :right} (format% percentage)]))
+
 (defn table-tab
   "Renders the 'Table' tab."
   []
   (let [mixtures @(rf/subscribe [::sub/mixture-names])
-        ingredient-weights @(rf/subscribe [::sub/ingredient-weights])]
+        ingredient-ids @(rf/subscribe [::sub/recipe-ingredient-ids])]
     [mui/table-container
      [mui/table
       [mui/table-head
@@ -245,19 +264,17 @@
         [mui/table-cell {:align :right} "Total"]
         [mui/table-cell {:align :right} "Percentage"]]]
       [mui/table-body
-       (for [{:keys [id name flour-proportion parts total percentage]}
-             ingredient-weights]
+       (for [id ingredient-ids]
          ^{:key id}
          [mui/table-row
           {:hover true}
-          [mui/table-cell
-           name 
-           (when flour-proportion [:strong " (F)"])]
+          [ingredient-cell {:ingredient-id id}]
           (for [{:mixture/keys [index]} mixtures]
             ^{:key index}
-            [part-weight-cell (get parts index)])
-          [mui/table-cell {:align :right} total]
-          [mui/table-cell {:align :right} (format% percentage)]])]]]))
+            [part-weight-cell {:ingredient-id id
+                               :mixture-index index}])
+          [ingredient-total-cell {:ingredient-id id}]
+          [ingredient-percentage-cell {:ingredient-id id}]])]]]))
 
 (def app
   (mui/with-styles
