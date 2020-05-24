@@ -21,7 +21,6 @@
    ["@material-ui/core/Grid" :as grid]
 
    ["@material-ui/core/IconButton" :as icon-button]
-   ["@material-ui/core/InputAdornment" :as input-adornment]
 
    ["@material-ui/core/List" :as list]
    ["@material-ui/core/ListItem" :as list-item]
@@ -32,6 +31,7 @@
    ["@material-ui/core/ListSubheader" :as list-subheader]
 
    ["@material-ui/core/Paper" :as paper]
+   ["@material-ui/core/Popover" :as popover]
    
    ["@material-ui/core/Table" :as table]
    ["@material-ui/core/TableBody" :as table-body]
@@ -132,6 +132,7 @@
 (def list-subheader (r/adapt-react-class list-subheader/default))
 
 (def paper (r/adapt-react-class paper/default))
+(def popover (r/adapt-react-class popover/default))
 
 (def table (r/adapt-react-class table/default))
 (def table-body (r/adapt-react-class table-body/default))

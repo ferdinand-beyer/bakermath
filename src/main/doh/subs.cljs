@@ -77,21 +77,21 @@
    (->> mixtures
         (mapcat (fn [mixture]
                   (let [index (:mixture/index mixture)]
-                    (map #(assoc % :mixture/index index)
-                         (:mixture/parts mixture)))))
+                    (map-indexed (fn [i part]
+                                   (merge part {:mixture/index index
+                                                :part/index i}))
+                                 (:mixture/parts mixture)))))
         (group-by :part/ingredient-id)
         (map (fn [[id parts]]
-               (let [weights (reduce (fn [mw {index :mixture/index
-                                              qty :part/quantity}]
-                                       (update mw index + qty))
-                                     {} parts)
-                     total (reduce + (map second weights))
+               (let [weights (into {} (map (juxt :mixture/index :part/quantity)) parts)
+                     total (reduce + (vals weights))
                      percentage (if (pos? flour-weight)
                                   (* 100 (/ total flour-weight))
                                   0)]
                  {:id id
                   :name (get-in ingredients [id :ingredient/name])
                   :flour-proportion (get-in ingredients [id :ingredient/flour-proportion])
+                  :parts (into {} (map (juxt :mixture/index identity) parts))
                   :weights weights
                   :total total
                   :percentage percentage})))

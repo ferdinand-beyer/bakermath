@@ -87,6 +87,7 @@
             new-db (assoc-in db [:ingredients new-id] {:ingredient/name name})]
         [new-db new-id]))))
 
+;; TODO: Save only one part per ingredient!
 (defn save-part-editor
   [db _]
   (let [{:editor/keys [mode mixture-index part-index]

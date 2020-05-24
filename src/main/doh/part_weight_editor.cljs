@@ -30,19 +30,31 @@
   [[_ part-ident] _]
   (rf/subscribe [::part part-ident]))
 
+;; TODO: Delete
 (defn editing?
   "Tells if we are currently editing a mixture part."
   [part _]
   (some? (::data part)))
 
+;; TODO: Delete
 (defn get-entered-weight
   "Extracts the weight as entered by the user."
   [part _]
   (get-in part [::data ::entered]))
 
+;; TODO: Delete
 (rf/reg-sub ::editing? part-signal editing?)
 
+;; TODO: Delete
 (rf/reg-sub ::entered-weight part-signal get-entered-weight)
+
+(defn editor
+  [part _]
+  {:editing? (some? (::data part))
+   :input (or (get-in part [::data ::entered])
+              (:part/quantity part))})
+
+(rf/reg-sub ::editor part-signal editor)
 
 ;;;; Events
 

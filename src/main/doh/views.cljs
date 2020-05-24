@@ -2,7 +2,9 @@
   (:require [doh.events :as e]
             [doh.subs :as sub]
             [doh.material-ui :as mui]
+            [doh.part-weight-editor :as pw-ed]
             [cljs.pprint :refer [pprint]]
+            [reagent.core :as r]
             [re-frame.core :as rf]))
 
 (set! *warn-on-infer* true)
@@ -181,6 +183,53 @@
 (defn format% [n]
   (str (.toFixed n 2) "%"))
 
+;; TODO: Need to update the weight!
+(defn part-weight-cell
+  [{mixture-index :mixture/index
+    part-index :part/index
+    weight :part/quantity}]
+  (let [part-ident {:mixture-index mixture-index
+                    :part-index part-index}
+        !element (atom nil)
+        editor (rf/subscribe [::pw-ed/editor part-ident])]
+    (fn [_]
+      (let [editor @editor
+            cancel-fn #(rf/dispatch [::pw-ed/cancel-edit part-ident])]
+        [mui/table-cell
+         {:align :right}
+         [mui/button
+          {:color :secondary
+           :ref #(reset! !element %)
+           :on-click #(rf/dispatch [::pw-ed/start-edit part-ident])}
+          (or weight "0")]
+         [mui/popover
+          {:open (:editing? editor)
+           :anchorEl @!element
+           :anchor-origin {:horizontal :center
+                           :vertical :bottom}
+           :transform-origin {:horizontal :center
+                              :vertical :top}
+           :on-close cancel-fn}
+          [:form
+           {:on-submit (fn [evt]
+                         (.preventDefault evt)
+                         (rf/dispatch [::pw-ed/save-edit part-ident]))}
+           [mui/dialog-content
+            [mui/text-field
+             {:label "Weight"
+              :type :number
+              :value (:input editor)
+              :on-change #(rf/dispatch-sync [::pw-ed/enter-weight part-ident (event-value %)])
+              :auto-focus true}]]
+           [mui/dialog-actions
+            [mui/button
+             {:on-click cancel-fn}
+             "Cancel"]
+            [mui/button
+             {:color :primary
+              :type :submit}
+             "Save"]]]]]))))
+
 (defn table-tab
   "Renders the 'Table' tab."
   []
@@ -196,7 +245,7 @@
         [mui/table-cell {:align :right} "Total"]
         [mui/table-cell {:align :right} "Percentage"]]]
       [mui/table-body
-       (for [{:keys [id name flour-proportion weights total percentage]}
+       (for [{:keys [id name flour-proportion parts total percentage]}
              ingredient-weights]
          ^{:key id}
          [mui/table-row
@@ -206,9 +255,7 @@
            (when flour-proportion [:strong " (F)"])]
           (for [{:mixture/keys [index]} mixtures]
             ^{:key index}
-            [mui/table-cell
-             {:align :right}
-             (get weights index)])
+            [part-weight-cell (get parts index)])
           [mui/table-cell {:align :right} total]
           [mui/table-cell {:align :right} (format% percentage)]])]]]))
 

@@ -15,6 +15,7 @@
   (s/map-of :ingredient/id ::ingredient))
 
 (s/def :part/ingredient-id :ingredient/id)
+;; TODO: rename to "weight"
 (s/def :part/quantity (s/and number? pos?))
 
 (s/def ::part
