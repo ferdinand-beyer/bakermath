@@ -1,8 +1,7 @@
 (ns doh.test-util
-  (:require-macros [doh.test-util])
-  (:require [cljs.spec.alpha :as s]
-            [doh.db :as db]))
+  (:require-macros [doh.test-util]))
 
+;; Used in the 'is' macro, declare to silence editors.
 (declare valid-db?)
 
 (def test-db
