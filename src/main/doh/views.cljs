@@ -296,7 +296,8 @@
 
 (def theme
   (mui/theme
-   {:palette {:primary (mui/color :amber)}}))
+   {:palette {:primary (mui/color :amber)
+              :secondary (mui/color :indigo)}}))
 
 (defn root []
   [:<>
