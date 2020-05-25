@@ -19,6 +19,16 @@
   (let [^js/HTMLInputElement el (.-target e)]
     (.-value el)))
 
+(defn cancel-button [props]
+  [mui/button
+   (merge {:color :primary} props)
+   "Cancel"])
+
+(defn save-button [props]
+  [mui/button
+   (merge {:type :submit, :color :primary} props)
+   "Save"])
+
 (defn part-list-item
   "Renders a list item for a mixture part."
   [{:keys [mixture-index part-index part]}]
@@ -155,13 +165,8 @@
                           [::e/update-part-editor-quantity
                            (event-value %)])}]]]]
         [mui/dialog-actions
-         [mui/button
-          {:on-click cancel-fn}
-          "Cancel"]
-         [mui/button
-          {:color :primary
-           :type :submit}
-          "Save"]]]])))
+         [cancel-button {:on-click cancel-fn}]
+         [save-button]]]])))
 
 (def recipe-tab
   (mui/with-styles
@@ -182,11 +187,16 @@
 
 (defn ingredient-cell
   [{:keys [ingredient-id]}]
-  (let [{:ingredient/keys [name flour-proportion]}
+  (let [{:ingredient/keys [name]}
+        @(rf/subscribe [::sub/ingredient ingredient-id])]
+    [mui/table-cell name]))
+
+(defn ingredient-flour-cell
+  [{:keys [ingredient-id]}]
+  (let [{:ingredient/keys [flour-proportion]}
         @(rf/subscribe [::sub/ingredient ingredient-id])]
     [mui/table-cell
-     name
-     (when flour-proportion [:strong " (F)"])]))
+     [mui/switch  {:checked (some? flour-proportion)}]]))
 
 (defn part-weight-cell
   [{:keys [ingredient-id mixture-index]}]
@@ -228,13 +238,8 @@
               :on-change #(rf/dispatch-sync [::pw-ed/enter-weight part-ident (event-value %)])
               :auto-focus true}]]
            [mui/dialog-actions
-            [mui/button
-             {:on-click cancel-fn}
-             "Cancel"]
-            [mui/button
-             {:color :primary
-              :type :submit}
-             "Save"]]]]]))))
+            [cancel-button {:on-click cancel-fn}]
+            [save-button]]]]]))))
 
 (defn ingredient-total-cell
   [{:keys [ingredient-id]}]
@@ -259,6 +264,7 @@
       [mui/table-head
        [mui/table-row
         [mui/table-cell "Ingredient"]
+        [mui/table-cell "Flour?"]
         (for [{:mixture/keys [index name]} mixtures]
           ^{:key index} [mui/table-cell {:align :right} name])
         [mui/table-cell {:align :right} "Total"]
@@ -269,6 +275,7 @@
          [mui/table-row
           {:hover true}
           [ingredient-cell {:ingredient-id id}]
+          [ingredient-flour-cell {:ingredient-id id}]
           (for [{:mixture/keys [index]} mixtures]
             ^{:key index}
             [part-weight-cell {:ingredient-id id

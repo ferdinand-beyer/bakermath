@@ -33,6 +33,8 @@
    ["@material-ui/core/Paper" :as paper]
    ["@material-ui/core/Popover" :as popover]
    
+   ["@material-ui/core/Switch" :as switch]
+   
    ["@material-ui/core/Table" :as table]
    ["@material-ui/core/TableBody" :as table-body]
    ["@material-ui/core/TableCell" :as table-cell]
@@ -51,7 +53,9 @@
 
    ["@material-ui/icons/Add" :as add-icon]
    ["@material-ui/icons/ArrowBack" :as arrow-back-icon]
+   ["@material-ui/icons/Clear" :as clear-icon]
    ["@material-ui/icons/Delete" :as delete-icon]
+   ["@material-ui/icons/Done" :as done-icon]
    ["@material-ui/icons/MoreVert" :as more-vert-icon]
 
    ["@material-ui/core/styles" :refer [ThemeProvider createMuiTheme withStyles]]
@@ -134,6 +138,8 @@
 (def paper (r/adapt-react-class paper/default))
 (def popover (r/adapt-react-class popover/default))
 
+(def switch (r/adapt-react-class switch/default))
+
 (def table (r/adapt-react-class table/default))
 (def table-body (r/adapt-react-class table-body/default))
 (def table-cell (r/adapt-react-class table-cell/default))
@@ -149,7 +155,9 @@
 
 (def add-icon (r/adapt-react-class add-icon/default))
 (def arrow-back-icon (r/adapt-react-class arrow-back-icon/default))
+(def clear-icon (r/adapt-react-class clear-icon/default))
 (def delete-icon (r/adapt-react-class delete-icon/default))
+(def done-icon (r/adapt-react-class done-icon/default))
 (def more-vert-icon (r/adapt-react-class more-vert-icon/default))
 
 (def theme-provider (r/adapt-react-class ThemeProvider))
