@@ -7,19 +7,18 @@
 (def test-db
   {:ingredients
    {0 {:ingredient/name "Rye flour full grain"
-       :ingredient/flour-proportion 1.0}
+       :ingredient/flour? true}
     1 {:ingredient/name "Rye flour type 1150"
-       :ingredient/flour-proportion 1.0}
+       :ingredient/flour? true}
     2 {:ingredient/name "Water"}
-    3 {:ingredient/name "Sourdough starter"
-       :ingredient/flour-proportion 0.5}
+    3 {:ingredient/name "Sourdough starter"}
     4 {:ingredient/name "Wheat flour full grain"
-       :ingredient/flour-proportion 1.0}
+       :ingredient/flour? true}
     5 {:ingredient/name "Wheat flour type 1050"
-       :ingredient/flour-proportion 1.0}
+       :ingredient/flour? true}
     6 {:ingredient/name "Salt"}}
 
-   :recipe/name "My Bread"
+   :recipe/name "Test Bread"
    :recipe/mixtures
    [{:mixture/name "Sourdough"
      :mixture/parts
