@@ -189,14 +189,15 @@
   [{:keys [ingredient-id]}]
   (let [{:ingredient/keys [name]}
         @(rf/subscribe [::sub/ingredient ingredient-id])]
-    [mui/table-cell name]))
+    [mui/table-cell
+     name]))
 
 (defn ingredient-flour-cell
   [{:keys [ingredient-id]}]
-  (let [{:ingredient/keys [flour-proportion]}
+  (let [{:ingredient/keys [flour?]}
         @(rf/subscribe [::sub/ingredient ingredient-id])]
     [mui/table-cell
-     [mui/switch  {:checked (some? flour-proportion)}]]))
+     [mui/switch  {:checked flour?}]]))
 
 (defn part-weight-cell
   [{:keys [ingredient-id mixture-index]}]

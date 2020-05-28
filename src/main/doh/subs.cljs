@@ -98,10 +98,8 @@
  (fn [[mixtures ingredients] _]
    (transduce (comp (mapcat :mixture/parts)
                     (map #(merge % (get ingredients (:part/ingredient-id %))))
-                    (filter :ingredient/flour-proportion)
-                    (map (juxt :ingredient/flour-proportion
-                               :part/quantity))
-                    (map #(apply * %)))
+                    (filter :ingredient/flour?)
+                    (map :part/quantity))
               + mixtures)))
 
 (rf/reg-sub

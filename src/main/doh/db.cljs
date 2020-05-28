@@ -1,15 +1,13 @@
 (ns doh.db
   (:require [cljs.spec.alpha :as s]))
 
-(s/def ::proportion (s/and number? #(<= 0.0 1.0)))
-
 (s/def :ingredient/id nat-int?)
 (s/def :ingredient/name string?)
-(s/def :ingredient/flour-proportion ::proportion)
+(s/def :ingredient/flour? boolean?)
 
 (s/def ::ingredient
   (s/keys :req [:ingredient/name]
-          :opt [:ingredient/flour-proportion]))
+          :opt [:ingredient/flour?]))
 
 (s/def ::ingredients
   (s/map-of :ingredient/id ::ingredient))
@@ -72,16 +70,15 @@
 (def default-db
   {:ingredients
    {0 {:ingredient/name "Rye flour full grain"
-       :ingredient/flour-proportion 1.0}
+       :ingredient/flour? true}
     1 {:ingredient/name "Rye flour type 1150"
-       :ingredient/flour-proportion 1.0}
+       :ingredient/flour? true}
     2 {:ingredient/name "Water"}
-    3 {:ingredient/name "Sourdough starter"
-       :ingredient/flour-proportion 0.5}
+    3 {:ingredient/name "Sourdough starter"}
     4 {:ingredient/name "Wheat flour full grain"
-       :ingredient/flour-proportion 1.0}
+       :ingredient/flour? true}
     5 {:ingredient/name "Wheat flour type 1050"
-       :ingredient/flour-proportion 1.0}
+       :ingredient/flour? true}
     6 {:ingredient/name "Salt"}}
    
    :recipe/name "My Bread"
