@@ -8,6 +8,7 @@
    ["@material-ui/core/Avatar" :as avatar]
    
    ["@material-ui/core/Button" :as button]
+   ["@material-ui/core/ButtonBase" :as button-base]
    ["@material-ui/core/CssBaseline" :as css-baseline]
    
    ["@material-ui/core/Dialog" :as dialog]
@@ -112,6 +113,7 @@
 (def avatar (r/adapt-react-class avatar/default))
 
 (def button (r/adapt-react-class button/default))
+(def button-base (r/adapt-react-class button-base/default))
 
 (def css-baseline (r/adapt-react-class css-baseline/default))
 

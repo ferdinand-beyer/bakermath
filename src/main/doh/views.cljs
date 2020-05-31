@@ -185,12 +185,31 @@
          :color :secondary}
         [mui/add-icon]]])))
 
+(def table-button-cell
+  (mui/with-styles
+   (fn [theme]
+     {:cell {:padding 0}
+      :button {:padding (.spacing theme 2)
+               :width "100%"
+               :text-align :inherit
+               :justify-content :inherit}
+     :align-right {:justify-content :flex-end}})
+   (fn [{:keys [align classes children]}]
+     [mui/table-cell
+      {:class (:cell classes)
+       :align (or align :left)}
+      [mui/button-base
+       {:class [(:button classes)
+                (when (= "right" align)
+                  (:align-right classes))]
+        :focus-ripple true}
+       children]])))
+
 (defn ingredient-cell
   [{:keys [ingredient-id]}]
   (let [{:ingredient/keys [name]}
         @(rf/subscribe [::sub/ingredient ingredient-id])]
-    [mui/table-cell
-     name]))
+    [table-button-cell name]))
 
 (defn ingredient-flour-cell
   [{:keys [ingredient-id]}]
@@ -262,6 +281,7 @@
         ingredient-ids @(rf/subscribe [::sub/recipe-ingredient-ids])]
     [mui/table-container
      [mui/table
+      {:size :small}
       [mui/table-head
        [mui/table-row
         [mui/table-cell "Ingredient"]
@@ -274,7 +294,7 @@
        (for [id ingredient-ids]
          ^{:key id}
          [mui/table-row
-          {:hover true}
+          {:hover false}
           [ingredient-cell {:ingredient-id id}]
           [ingredient-flour-cell {:ingredient-id id}]
           (for [{:mixture/keys [index]} mixtures]
