@@ -4,7 +4,7 @@
             [doh.material-ui :as mui]
             [doh.part-weight-editor :as pw-ed]
             [cljs.pprint :refer [pprint]]
-            [reagent.core :as r]
+            [clojure.set :refer [rename-keys]]
             [re-frame.core :as rf]))
 
 (set! *warn-on-infer* true)
@@ -186,30 +186,45 @@
         [mui/add-icon]]])))
 
 (def table-button-cell
+  "Renders a table cell that acts as a button.
+   
+   Attributes:
+   * align
+   * button-ref: Get a Ref of the button element
+   * on-click"
   (mui/with-styles
    (fn [theme]
      {:cell {:padding 0}
-      :button {:padding (.spacing theme 2)
-               :width "100%"
-               :text-align :inherit
-               :justify-content :inherit}
-     :align-right {:justify-content :flex-end}})
-   (fn [{:keys [align classes children]}]
+      :button (merge (js->clj (.. theme -typography -body1))
+                     {:padding (.spacing theme 2)
+                      :width "100%"
+                      :justify-content :inherit
+                      :text-align :inherit
+                      :fontSize :inherit
+                      "&:hover" {:background-color (.. theme -palette -action -hover)}})
+      :align-right {:justify-content :flex-end}
+      :label {}})
+   (fn [{:keys [align classes children label]
+         :as props}]
      [mui/table-cell
       {:class (:cell classes)
        :align (or align :left)}
       [mui/button-base
-       {:class [(:button classes)
-                (when (= "right" align)
-                  (:align-right classes))]
-        :focus-ripple true}
-       children]])))
+       (-> props
+           (select-keys [:onClick :buttonRef])
+           (rename-keys {:buttonRef :ref})
+           (merge {:class [(:button classes)
+                           (when (= "right" align)
+                             (:align-right classes))]
+                   :focus-ripple true}))
+       [:span {:class (:label classes)} label]]
+      children])))
 
 (defn ingredient-cell
   [{:keys [ingredient-id]}]
   (let [{:ingredient/keys [name]}
         @(rf/subscribe [::sub/ingredient ingredient-id])]
-    [table-button-cell name]))
+    [table-button-cell {:label name}]))
 
 (defn ingredient-flour-cell
   [{:keys [ingredient-id]}]
@@ -231,16 +246,14 @@
     (fn [_]
       (let [{:keys [editing? input]} @editor
             cancel-fn #(rf/dispatch [::pw-ed/cancel-edit part-ident])]
-        [mui/table-cell
-         {:align :right}
-         [mui/button
-          {:color :secondary
-           :ref #(reset! !element %)
-           :on-click #(rf/dispatch [::pw-ed/start-edit part-ident])}
-          @weight]
+        [table-button-cell
+         {:align :right
+          :label @weight
+          :button-ref #(reset! !element %)
+          :on-click #(rf/dispatch [::pw-ed/start-edit part-ident])}
          [mui/popover
           {:open editing?
-           :anchorEl @!element
+           :anchor-el @!element
            :anchor-origin {:horizontal :center
                            :vertical :bottom}
            :transform-origin {:horizontal :center

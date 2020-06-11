@@ -9,6 +9,8 @@
    
    ["@material-ui/core/Button" :as button]
    ["@material-ui/core/ButtonBase" :as button-base]
+   
+   ["@material-ui/core/Chip" :as chip]
    ["@material-ui/core/CssBaseline" :as css-baseline]
    
    ["@material-ui/core/Dialog" :as dialog]
@@ -59,7 +61,7 @@
    ["@material-ui/icons/Done" :as done-icon]
    ["@material-ui/icons/MoreVert" :as more-vert-icon]
 
-   ["@material-ui/core/styles" :refer [ThemeProvider createMuiTheme withStyles]]
+   ["@material-ui/core/styles" :as mui-styles :refer [ThemeProvider createMuiTheme withStyles]]
    ["@material-ui/core/colors" :as mui-colors]))
 
 ;; https://github.com/reagent-project/reagent/blob/master/examples/material-ui/src/example/core.cljs
@@ -115,6 +117,7 @@
 (def button (r/adapt-react-class button/default))
 (def button-base (r/adapt-react-class button-base/default))
 
+(def chip (r/adapt-react-class chip/default))
 (def css-baseline (r/adapt-react-class css-baseline/default))
 
 (def dialog (r/adapt-react-class dialog/default))
@@ -180,6 +183,7 @@
   "Decorate a Reagent component using the higher-order component (HOC) pattern.
    `hoc` needs to be a JavaScript function."
   [hoc component]
+  ;; component will now receive props in camelCase...
   (-> component r/reactify-component hoc r/adapt-react-class))
 
 (defn with-styles
@@ -197,3 +201,5 @@
                      children))
             (decorate hoc)))))
   ([styles component] ((with-styles styles) component)))
+
+(def fade mui-styles/fade)
