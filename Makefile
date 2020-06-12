@@ -12,7 +12,7 @@ watch:
 	$(SHADOW_CLJS) watch main test
 
 release:
-	$(SHADOW_CLJS) release
+	$(SHADOW_CLJS) release main
 
 start:
 	$(SHADOW_CLJS) start
