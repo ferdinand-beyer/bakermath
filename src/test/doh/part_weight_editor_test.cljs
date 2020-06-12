@@ -12,15 +12,15 @@
 (defn- get-part-weight [db]
   (get-in db (conj part-db-path :part/quantity)))
 
-(deftest test-initial-state
+#_(deftest test-initial-state
   (is (not (ed/editing? (get-part test-db) nil))))
 
-(deftest test-start-editing
+#_(deftest test-start-editing
   (let [db (ed/start-edit test-db [nil part-ident])]
     (is (valid-db? db))
     (is (ed/editing? (get-part db) nil))))
 
-(deftest test-enter-weight
+#_(deftest test-enter-weight
   (let [start-db (-> test-db (ed/start-edit [nil part-ident]))
         enter-weight #(ed/enter-weight start-db [nil part-ident %])]
     (let [db (enter-weight "123.45")]
@@ -34,7 +34,7 @@
     (let [db (enter-weight "0")]
       (is (= (get-part-weight test-db) (get-part-weight db))))))
 
-(deftest test-cancel-edit
+#_(deftest test-cancel-edit
   (let [db (-> test-db (ed/cancel-edit [nil part-ident]))]
     (is (= db test-db)))
   (let [db (-> test-db (ed/start-edit [nil part-ident]) (ed/cancel-edit [nil part-ident]))]
@@ -45,7 +45,7 @@
                (ed/cancel-edit [nil part-ident]))]
     (is (= test-db db))))
 
-(deftest test-save-edit
+#_(deftest test-save-edit
   (let [db (-> test-db
                (ed/start-edit [nil part-ident])
                (ed/enter-weight [nil part-ident "123"])

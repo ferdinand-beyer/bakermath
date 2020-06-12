@@ -15,6 +15,8 @@
   [v index]
   (vec (concat (subvec v 0 index) (subvec v (inc index)))))
 
+;;;; Initialization
+
 (def init-db (constantly db/default-db))
 
 (rf/reg-event-db
@@ -22,98 +24,165 @@
  [check-spec-interceptor]
  init-db)
 
+;;;; Views
+
 (rf/reg-event-db
  ::select-recipe-tab
  [check-spec-interceptor]
  (fn [db [_ {:keys [tab]}]]
-   (assoc db :recipe/tab tab)))
+   (assoc db :view/tab tab)))
 
-(rf/reg-event-db
- ::edit-part
- [check-spec-interceptor]
- (fn [db [_ {:keys [mixture-index part-index]}]]
-   (let [{:part/keys [ingredient-id quantity]}
-         (get-in db [:recipe/mixtures mixture-index
-                     :mixture/parts part-index])
-         {:ingredient/keys [name]}
-         (get-in db [:ingredients ingredient-id])]
-     (assoc db :part-editor
-            {:editor/mixture-index mixture-index
-             :editor/part-index part-index
-             :editor/mode :edit
-             :editor/visible? true
-             :ingredient/name name
-             :part/ingredient-id ingredient-id
-             :part/quantity quantity}))))
-
-(rf/reg-event-db
- ::edit-new-part
- [check-spec-interceptor]
- (fn [db [_ {:keys [mixture-index]}]]
-   (assoc db :part-editor
-          {:editor/mixture-index mixture-index
-           :editor/mode :new
-           :editor/visible? true})))
-
-(rf/reg-event-db
- ::update-part-editor-name
- [check-spec-interceptor]
- (fn [db [_ name]]
-   (assoc-in db [:part-editor :ingredient/name] name)))
-
-(rf/reg-event-db
- ::update-part-editor-quantity
- [check-spec-interceptor]
- (fn [db [_ quantity]]
-   (assoc-in db [:part-editor :part/quantity]
-             ;; TODO: Express everything in milligrams?
-             (js/parseFloat quantity))))
-
-(rf/reg-event-db
- ::cancel-part-edit
- [check-spec-interceptor]
- (fn [db _]
-   (assoc-in db [:part-editor :editor/visible?] false)))
-
-(defn save-ingredient
-  [db name]
-  (let [ingredients (:ingredients db)]
-    (if-let [id (->> ingredients
-                     (filter #(= name (:ingredient/name (val %))))
-                     (map key)
-                     first)]
-      [db id]
-      (let [new-id (count ingredients)
-            new-db (assoc-in db [:ingredients new-id] {:ingredient/name name})]
-        [new-db new-id]))))
-
-;; TODO: Save only one part per ingredient!
-(defn save-part-editor
-  [db _]
-  (let [{:editor/keys [mode mixture-index part-index]
-         :ingredient/keys [name]
-         :part/keys [quantity]}
-        (:part-editor db)
-        
-        [db ingredient-id] (save-ingredient db name)
-        part {:part/ingredient-id ingredient-id
-              :part/quantity quantity}]
-    (cond-> db
-      (= :new mode) (update-in [:recipe/mixtures mixture-index :mixture/parts]
-                               (fnil #(conj % part) []))
-      (= :edit mode) (update-in [:recipe/mixtures mixture-index
-                                 :mixture/parts part-index]
-                                merge part)
-      :finally (assoc-in [:part-editor :editor/visible?] false))))
-
-(rf/reg-event-db
- ::save-part-edit
- [check-spec-interceptor]
- save-part-editor)
+;;;; Parts
 
 (rf/reg-event-db
  ::delete-part
  [check-spec-interceptor]
- (fn [db [_ {:keys [mixture-index part-index]}]]
-   (update-in db [:recipe/mixtures mixture-index :mixture/parts]
-              dissoc-vec part-index)))
+ (fn [db [_ mixture-id ingredient-id]]
+   ; TODO Delete ingredient when no longer referenced?
+   (update-in db [:db/mixtures mixture-id :mixture/parts]
+              dissoc ingredient-id)))
+
+;;;; Part Editor
+
+(defn- parse-float [x]
+  (let [n (js/parseFloat x)]
+    (when-not (js/isNaN n)
+      n)))
+
+(defn new-part
+  "Open the part editor to add a part to the mixture."
+  [db mixture-id]
+  (assoc db :view/part-editor
+         #:editor {:visible? true
+                   :mode :new
+                   :mixture-id mixture-id}))
+
+(defn edit-part
+  "Open the part editor to edit an existing part."
+  [db mixture-id ingredient-id]
+  (let [name (get-in db [:db/ingredients ingredient-id :ingredient/name])
+        quantity (get-in db [:db/mixtures mixture-id :mixture/parts ingredient-id])]
+    (assoc db :view/part-editor
+           #:editor {:visible? true
+                     :mode :edit
+                     :mixture-id mixture-id
+                     :ingredient-id ingredient-id
+                     :name {:field/input name}
+                     :quantity {:field/input quantity}})))
+
+(defn change-part-name [db name]
+  (assoc-in db [:view/part-editor :editor/name] {:field/input name}))
+
+(defn change-part-quantity [db quantity]
+  (assoc-in db [:view/part-editor :editor/quantity] {:field/input quantity}))
+
+(defn cancel-part
+  [db]
+  (assoc-in db [:view/part-editor :editor/visible?] false))
+
+(defn validate-name
+  [db]
+  (let [{{{input :field/input} :editor/name
+          mixture-id :editor/mixture-id
+          prev-id :editor/ingredient-id} :view/part-editor} db
+        value (when (db/not-blank? input) input)
+        id (when-let [ingredient (and value (db/find-ingredient-by-name db value))]
+             (:ingredient/id ingredient))
+        error (cond
+                (nil? value) "Invalid name"
+                (and (some? id)
+                     (not= id prev-id)
+                     (some? (get-in db [:db/mixtures mixture-id
+                                        :mixture/parts id])))
+                "Already exists")]
+    (assoc-in db [:view/part-editor :editor/name]
+              (cond-> #:field{:input input, :value value}
+                (some? error) (assoc :field/error error)
+                (some? id) (assoc :ingredient/id id)))))
+
+(defn validate-quantity
+  [db]
+  (let [input (get-in db [:view/part-editor :editor/quantity :field/input])
+        value (parse-float input)
+        error (cond
+                (nil? value) "Invalid number"
+                (not (pos? value)) "Must be positive")]
+    (assoc-in db [:view/part-editor :editor/quantity]
+              (cond-> #:field{:input input, :value value}
+                (some? error) (assoc :field/error error)))))
+
+(defn- exclusive-ingredient?
+  [db ingredient-id]
+  (nil? (second (db/find-mixtures-by-ingredient-id db ingredient-id))))
+
+(defn save-part
+  [db]
+  (let [{{mixture-id :editor/mixture-id
+          prev-ingredient-id :editor/ingredient-id
+          {name :field/value
+           name-error :field/error
+           ingredient-id :ingredient/id} :editor/name
+          {quantity :field/value
+           quantity-error :field/error} :editor/quantity}
+         :view/part-editor
+         :as db}
+        (-> db validate-name validate-quantity)]
+    (if (or name-error quantity-error)
+      db
+      (let [[db ingredient-id]
+            (cond
+              (some? ingredient-id) [db ingredient-id]
+              
+              (and (some? prev-ingredient-id)
+                   (exclusive-ingredient? db prev-ingredient-id))
+              [(assoc-in db [:db/ingredients prev-ingredient-id
+                             :ingredient/name] name)
+               prev-ingredient-id]
+              
+              :else (db/add-ingredient db name false))]
+        (-> db
+            (cond->
+             (and (some? prev-ingredient-id)
+                  (not= prev-ingredient-id ingredient-id))
+              (update-in [:db/mixtures mixture-id :mixture/parts]
+                         dissoc prev-ingredient-id))
+            (assoc-in [:db/mixtures mixture-id
+                       :mixture/parts ingredient-id]
+                      quantity)
+            (assoc-in [:view/part-editor :editor/visible?] false))))))
+
+(rf/reg-event-db
+ ::new-part
+ [check-spec-interceptor]
+ (fn [db [_ mixture-id]]
+   (new-part db mixture-id)))
+
+(rf/reg-event-db
+ ::edit-part
+ [check-spec-interceptor]
+ (fn [db [_ mixture-id ingredient-id]]
+   (edit-part db mixture-id ingredient-id)))
+
+(rf/reg-event-db
+ ::change-part-name
+ [check-spec-interceptor]
+ (fn [db [_ name]]
+   (change-part-name db name)))
+
+(rf/reg-event-db
+ ::change-part-quantity
+ [check-spec-interceptor]
+ (fn [db [_ quantity]]
+   (change-part-quantity db quantity)))
+
+(rf/reg-event-db
+ ::cancel-part
+ [check-spec-interceptor]
+ (fn [db _]
+   (cancel-part db)))
+
+(rf/reg-event-db
+ ::save-part
+ [check-spec-interceptor]
+ (fn [db _]
+   (save-part db)))

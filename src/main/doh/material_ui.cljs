@@ -184,6 +184,7 @@
    `hoc` needs to be a JavaScript function."
   [hoc component]
   ;; component will now receive props in camelCase...
+  ;; https://clj-commons.org/camel-snake-kebab/
   (-> component r/reactify-component hoc r/adapt-react-class))
 
 (defn with-styles

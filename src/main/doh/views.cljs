@@ -9,8 +9,6 @@
 
 (set! *warn-on-infer* true)
 
-(def indexed (partial map vector (range)))
-
 (defn debug [& args]
   [:pre (for [x args] (with-out-str (pprint x)))])
 
@@ -31,33 +29,30 @@
 
 (defn part-list-item
   "Renders a list item for a mixture part."
-  [{:keys [mixture-index part-index part]}]
-  (let [ingredient-id (:part/ingredient-id part)
+  [mixture-id ingredient-id]
+  (let [quantity @(rf/subscribe [::sub/part-quantity mixture-id ingredient-id])
         ingredient @(rf/subscribe [::sub/ingredient ingredient-id])
-        name (:ingredient/name ingredient)
-        quantity (:part/quantity part)]
+        color @(rf/subscribe [::sub/ingredient-avatar-color ingredient-id])
+        name (:ingredient/name ingredient)]
     [mui/list-item
      {:button true
-      :on-click #(rf/dispatch [::e/edit-part
-                               {:mixture-index mixture-index
-                                :part-index part-index}])}
+      :on-click #(rf/dispatch [::e/edit-part mixture-id ingredient-id])}
      [mui/list-item-avatar
       [mui/avatar
-       {:style {:background-color (:avatar/color ingredient)}}
+       {:style {:background-color color}}
        (-> name (.substr 0 1) .toUpperCase)]]
      [mui/list-item-text {:primary name
                           :secondary quantity}]
      [mui/list-item-secondary-action
       [mui/icon-button
        {:edge :end
-        :on-click #(rf/dispatch [::e/delete-part {:mixture-index mixture-index
-                                                  :part-index part-index}])}
+        :on-click #(rf/dispatch [::e/delete-part mixture-id ingredient-id])}
        [mui/delete-icon]]]]))
 
 (def mixture-header
   (mui/with-styles
     {:grow {:flex-grow 1}}
-    (fn [{:keys [label classes]}]
+    (fn [{:keys [label classes onAdd]}]
       [mui/tool-bar
        {:class (:grow classes)
         :disable-gutters false}
@@ -66,6 +61,7 @@
          :variant :subtitle1}
         label]
        [mui/icon-button
+        {:on-click onAdd}
         [mui/add-icon]]
        [mui/icon-button
         {:edge :end}
@@ -73,30 +69,24 @@
 
 (defn mixture
   "Renders a mixture as a list of its parts."
-  [{:keys [mixture-index mixture]}]
-  (let [parts @(rf/subscribe [::sub/parts mixture-index])]
+  [mixture-id]
+  (let [mixture @(rf/subscribe [::sub/mixture mixture-id])
+        ingredient-ids @(rf/subscribe [::sub/mixture-ingredient-ids mixture-id])]
     [:div
-     [mixture-header {:label (:mixture/name mixture)}]
+     [mixture-header
+      {:label (:mixture/name mixture)
+       :on-add #(rf/dispatch [::e/new-part mixture-id])}]
      [mui/list
-      #_[mui/list-subheader (:mixture/name mixture)]
-      (for [[i p] (indexed parts)]
-        ^{:key i} [part-list-item {:mixture-index mixture-index
-                                   :part-index i
-                                   :part p}])
-      [mui/list-item
-       {:button true
-        :on-click #(rf/dispatch [::e/edit-new-part
-                                 {:mixture-index mixture-index}])}
-       [mui/list-item-icon [mui/add-icon]]
-       [mui/list-item-text "Add ingredient"]]]]))
+      (for [id ingredient-ids]
+        ^{:key id} [part-list-item mixture-id id])]]))
 
 (defn mixture-list
   "Renders a list of mixtures."
   []
   [:<>
-   (let [mixtures @(rf/subscribe [::sub/mixtures])]
-     (for [[i m] (indexed mixtures)]
-       ^{:key i} [mixture {:mixture-index i, :mixture m}]))])
+   (let [mixture-ids @(rf/subscribe [::sub/recipe-mixture-ids])]
+     (for [id mixture-ids]
+       ^{:key id} [mixture id]))])
 
 (defn ingredient-input
   "Renders an ingredient selection input control."
@@ -119,11 +109,9 @@
 (defn part-editor
   "Renders the part editor."
   []
-  (when-let [{:editor/keys [mode visible?]
-              :part/keys [ingredient-id quantity]
-              :ingredient/keys [name]}
+  (when-let [{:editor/keys [visible? mode ingredient-id name quantity]}
              @(rf/subscribe [::sub/part-editor])]
-    (let [cancel-fn #(rf/dispatch [::e/cancel-part-edit])]
+    (let [cancel-fn #(rf/dispatch [::e/cancel-part])]
       [mui/dialog
        {:open visible?
         :on-close cancel-fn
@@ -132,7 +120,7 @@
        [:form
         {:on-submit (fn [e]
                       (.preventDefault e)
-                      (rf/dispatch [::e/save-part-edit]))}
+                      (rf/dispatch [::e/save-part]))}
         [mui/dialog-title {} (if (= mode :new)
                                "Add ingredient"
                                "Edit ingredient")]
@@ -148,8 +136,10 @@
              :autoFocus (= mode :new)
              :fullWidth true
              :value ingredient-id
-             :input-value name
-             :on-change #(rf/dispatch-sync [::e/update-part-editor-name %2])}]]
+             :input-value (:field/input name)
+             :error (some? (:field/error name))
+             :helperText (:field/error name)
+             :on-change #(rf/dispatch-sync [::e/change-part-name %2])}]]
           [mui/grid
            {:item true
             :xs 4}
@@ -160,10 +150,11 @@
                            :step 0.01}
              :full-width true
              :auto-focus (= mode :edit)
-             :value quantity
+             :value (:field/input quantity)
+             :error (some? (:field/error quantity))
+             :helper-text (:field/error quantity)
              :on-change #(rf/dispatch-sync
-                          [::e/update-part-editor-quantity
-                           (event-value %)])}]]]]
+                          [::e/change-part-quantity (event-value %)])}]]]]
         [mui/dialog-actions
          [cancel-button {:on-click cancel-fn}]
          [save-button]]]])))
@@ -221,34 +212,30 @@
       children])))
 
 (defn ingredient-cell
-  [{:keys [ingredient-id]}]
+  [ingredient-id]
   (let [{:ingredient/keys [name]}
         @(rf/subscribe [::sub/ingredient ingredient-id])]
     [table-button-cell {:label name}]))
 
 (defn ingredient-flour-cell
-  [{:keys [ingredient-id]}]
+  [ingredient-id]
   (let [{:ingredient/keys [flour?]}
         @(rf/subscribe [::sub/ingredient ingredient-id])]
     [mui/table-cell
      [mui/switch  {:checked flour?}]]))
 
-(defn part-weight-cell
-  [{:keys [ingredient-id mixture-index]}]
-  (let [part-index @(rf/subscribe [::sub/ingredient-part-index
-                                   ingredient-id
-                                   mixture-index])
-        part-ident {:mixture-index mixture-index
-                    :part-index part-index}
-        !element (atom nil)
-        weight (rf/subscribe [::sub/ingredient-weight ingredient-id mixture-index])
-        editor (rf/subscribe [::pw-ed/editor part-ident])]
+(defn part-cell
+  [mixture-id ingredient-id]
+  (let [quantity (rf/subscribe [::sub/part-quantity mixture-id ingredient-id])
+        part-ident {:mixture-id mixture-id :ingredient-id ingredient-id}
+        editor (rf/subscribe [::pw-ed/editor part-ident])
+        !element (atom nil)]
     (fn [_]
       (let [{:keys [editing? input]} @editor
             cancel-fn #(rf/dispatch [::pw-ed/cancel-edit part-ident])]
         [table-button-cell
          {:align :right
-          :label @weight
+          :label (or @quantity 0)
           :button-ref #(reset! !element %)
           :on-click #(rf/dispatch [::pw-ed/start-edit part-ident])}
          [mui/popover
@@ -275,7 +262,7 @@
             [save-button]]]]]))))
 
 (defn ingredient-total-cell
-  [{:keys [ingredient-id]}]
+  [ingredient-id]
   (let [total @(rf/subscribe [::sub/ingredient-total ingredient-id])]
     [mui/table-cell {:align :right} total]))
 
@@ -283,14 +270,14 @@
   (str (.toFixed n 2) "%"))
 
 (defn ingredient-percentage-cell
-  [{:keys [ingredient-id]}]
+  [ingredient-id]
   (let [percentage @(rf/subscribe [::sub/ingredient-percentage ingredient-id])]
     [mui/table-cell {:align :right} (format% percentage)]))
 
 (defn table-tab
   "Renders the 'Table' tab."
   []
-  (let [mixtures @(rf/subscribe [::sub/mixture-names])
+  (let [mixtures @(rf/subscribe [::sub/recipe-mixtures])
         ingredient-ids @(rf/subscribe [::sub/recipe-ingredient-ids])]
     [mui/table-container
      [mui/table
@@ -299,23 +286,22 @@
        [mui/table-row
         [mui/table-cell "Ingredient"]
         [mui/table-cell "Flour?"]
-        (for [{:mixture/keys [index name]} mixtures]
-          ^{:key index} [mui/table-cell {:align :right} name])
+        (for [{:mixture/keys [id name]} mixtures]
+          ^{:key id} [mui/table-cell {:align :right} name])
         [mui/table-cell {:align :right} "Total"]
         [mui/table-cell {:align :right} "Percentage"]]]
       [mui/table-body
-       (for [id ingredient-ids]
-         ^{:key id}
+       (for [ingredient-id ingredient-ids]
+         ^{:key ingredient-id}
          [mui/table-row
           {:hover false}
-          [ingredient-cell {:ingredient-id id}]
-          [ingredient-flour-cell {:ingredient-id id}]
-          (for [{:mixture/keys [index]} mixtures]
-            ^{:key index}
-            [part-weight-cell {:ingredient-id id
-                               :mixture-index index}])
-          [ingredient-total-cell {:ingredient-id id}]
-          [ingredient-percentage-cell {:ingredient-id id}]])]]]))
+          [ingredient-cell ingredient-id]
+          [ingredient-flour-cell ingredient-id]
+          (for [{:mixture/keys [id]} mixtures]
+            ^{:key id}
+            [part-cell id ingredient-id])
+          [ingredient-total-cell ingredient-id]
+          [ingredient-percentage-cell ingredient-id]])]]]))
 
 (def app
   (mui/with-styles
@@ -325,7 +311,7 @@
        :title {:flexGrow 1}})
     (fn [{:keys [classes]}]
       (let [recipe @(rf/subscribe [::sub/recipe])
-            tab (or (:recipe/tab recipe) :recipe)]
+            tab @(rf/subscribe [::sub/recipe-tab])]
         [:div {:class (:root classes)}
          [mui/app-bar
           {:position :sticky}
