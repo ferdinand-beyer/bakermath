@@ -222,7 +222,9 @@
   (let [{:ingredient/keys [flour?]}
         @(rf/subscribe [::sub/ingredient ingredient-id])]
     [mui/table-cell
-     [mui/switch  {:checked flour?}]]))
+     [mui/switch
+      {:checked (boolean flour?)
+       :on-change #(rf/dispatch [::e/toggle-ingredient-flour ingredient-id])}]]))
 
 (defn part-cell
   [{:keys [mixture-id ingredient-id on-edit-part]}]

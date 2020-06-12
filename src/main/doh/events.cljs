@@ -32,6 +32,18 @@
  (fn [db [_ {:keys [tab]}]]
    (assoc db :view/tab tab)))
 
+;;;; Ingredients
+
+(defn toggle-ingredient-flour
+  [db ingredient-id]
+  (update-in db [:db/ingredients ingredient-id :ingredient/flour?] not))
+
+(rf/reg-event-db
+ ::toggle-ingredient-flour
+ [check-spec-interceptor]
+ (fn [db [_ ingredient-id]]
+   (toggle-ingredient-flour db ingredient-id)))
+
 ;;;; Parts
 
 (rf/reg-event-db
