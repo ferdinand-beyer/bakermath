@@ -27,6 +27,8 @@
    (merge {:type :submit, :color :primary} props)
    "Save"])
 
+;;;; Recipe view
+
 (defn part-list-item
   "Renders a list item for a mixture part."
   [mixture-id ingredient-id]
@@ -176,6 +178,8 @@
          :color :secondary}
         [mui/add-icon]]])))
 
+;;;; Table View
+
 (def table-button-cell
   "Renders a table cell that acts as a button.
    
@@ -187,7 +191,7 @@
    (fn [theme]
      {:cell {:padding 0}
       :button (merge (js->clj (.. theme -typography -body1))
-                     {:padding (.spacing theme 2)
+                     {:padding "16px 24px 16px 16px"
                       :width "100%"
                       :justify-content :inherit
                       :text-align :inherit
@@ -242,42 +246,57 @@
     [mui/table-cell {:align :right} total]))
 
 (defn format% [n]
-  (str (.toFixed n 2) "%"))
+  (str (.toFixed n 1) "%"))
 
 (defn ingredient-percentage-cell
   [ingredient-id]
   (let [percentage @(rf/subscribe [::sub/ingredient-percentage ingredient-id])]
     [mui/table-cell {:align :right} (format% percentage)]))
 
+(defn mixture-total-cell
+  [{:keys [mixture-id]}]
+  (let [total @(rf/subscribe [::sub/mixture-total mixture-id])]
+    [mui/table-cell {:align :right} total]))
+
 (defn ingredient-table
   [{:keys [on-edit-part]}]
   (let [mixtures @(rf/subscribe [::sub/recipe-mixtures])
-        ingredient-ids @(rf/subscribe [::sub/recipe-ingredient-ids])]
+        ingredient-ids @(rf/subscribe [::sub/recipe-ingredient-ids])
+        grand-total @(rf/subscribe [::sub/grand-total])
+        flour-total @(rf/subscribe [::sub/flour-total])]
     [mui/table-container
      [mui/table
       {:size :small}
       [mui/table-head
        [mui/table-row
         [mui/table-cell "Ingredient"]
-        [mui/table-cell "Flour?"]
         (for [{:mixture/keys [id name]} mixtures]
           ^{:key id} [mui/table-cell {:align :right} name])
         [mui/table-cell {:align :right} "Total"]
-        [mui/table-cell {:align :right} "Percentage"]]]
+        [mui/table-cell {:align :right} "Percent"]
+        [mui/table-cell "Flour?"]]]
       [mui/table-body
        (for [ingredient-id ingredient-ids]
          ^{:key ingredient-id}
          [mui/table-row
           {:hover false}
           [ingredient-cell ingredient-id]
-          [ingredient-flour-cell ingredient-id]
           (for [{:mixture/keys [id]} mixtures]
             ^{:key id}
             [part-cell {:mixture-id id 
                         :ingredient-id ingredient-id
                         :on-edit-part on-edit-part}])
           [ingredient-total-cell ingredient-id]
-          [ingredient-percentage-cell ingredient-id]])]]]))
+          [ingredient-percentage-cell ingredient-id]
+          [ingredient-flour-cell ingredient-id]])]
+      [mui/table-footer
+       [mui/table-row
+        [mui/table-cell]
+        (for [{:mixture/keys [id name]} mixtures]
+          ^{:key id} [mixture-total-cell {:mixture-id id}])
+        [mui/table-cell {:align :right} grand-total]
+        [mui/table-cell {:align :right} flour-total]
+        [mui/table-cell]]]]]))
 
 (defn quantity-editor
   [{:keys [anchor-el]}]
@@ -320,6 +339,8 @@
            (reset! element el)
            (rf/dispatch [::e/edit-quantity mixture-id ingredient-id]))}]
        [quantity-editor {:anchor-el @element}]])))
+
+;;;; App root
 
 (def app
   (mui/with-styles

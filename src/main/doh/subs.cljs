@@ -92,13 +92,31 @@
  (fn [mixtures [_ id]]
    (get mixtures id)))
 
+(rf/reg-sub
+ ::mixture-ingredients
+ (fn [[_ id] _]
+   [(rf/subscribe [::mixture id])
+    (rf/subscribe [::ingredients])])
+ (fn [[mixture ingredients] _]
+   (->> mixture :mixture/parts keys
+        (map ingredients)
+        (sort-by :ingredient/name)
+        vec)))
+
 ;; Ingredient IDs in a mixture.
 (rf/reg-sub
  ::mixture-ingredient-ids
  (fn [[_ id] _]
+   (rf/subscribe [::mixture-ingredients id]))
+ (fn [ingredients _]
+   (mapv :ingredient/id ingredients)))
+
+(rf/reg-sub
+ ::mixture-total
+ (fn [[_ id] _]
    (rf/subscribe [::mixture id]))
  (fn [mixture _]
-   (keys (:mixture/parts mixture))))
+   (->> mixture :mixture/parts vals (reduce +))))
 
 ;; Quantity of a mixture ingredient.
 (rf/reg-sub
@@ -136,24 +154,39 @@
 
 ;; Ingredients used by the recipe.
 (rf/reg-sub
- ::recipe-ingredient-ids
+ ::recipe-ingredient-id-set
  :<- [::recipe-mixtures]
  (fn [mixtures _]
    (into #{}
-         (comp (mapcat :mixture/parts)
-               (map key))
-         mixtures)))
+    (comp (mapcat :mixture/parts)
+          (map key))
+    mixtures)))
 
 (rf/reg-sub
  ::recipe-ingredients
- :<- [::recipe-ingredient-ids]
+ :<- [::recipe-ingredient-id-set]
  :<- [::ingredients]
  (fn [[ids ingredients] _]
-   (->> (map ingredients ids)
+   (->> ids
+        (map ingredients)
         (sort-by :ingredient/name)
         vec)))
 
+(rf/reg-sub
+ ::recipe-ingredient-ids
+ :<- [::recipe-ingredients]
+ (fn [ingredients _]
+   (mapv :ingredient/id ingredients)))
+
 ;;;; Analyses
+
+(rf/reg-sub
+ ::grand-total
+ :<- [::recipe-mixtures]
+ (fn [mixtures _]
+   (transduce (comp (mapcat :mixture/parts)
+                    (map val))
+              + mixtures)))
 
 (rf/reg-sub
  ::flour-total
