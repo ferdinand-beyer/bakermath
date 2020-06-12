@@ -186,3 +186,67 @@
  [check-spec-interceptor]
  (fn [db _]
    (save-part db)))
+
+;;;; Quantity editor
+
+(defn edit-quantity
+  [db mixture-id ingredient-id]
+  (let [quantity (get-in db [:db/mixtures mixture-id
+                             :mixture/parts ingredient-id])]
+    (assoc db :view/quantity-editor
+           #:editor{:visible? true
+                    :mixture-id mixture-id
+                    :ingredient-id ingredient-id
+                    :quantity #:field{:orig quantity
+                                      :input (or quantity "")}})))
+
+(defn change-quantity
+  [db input]
+  (let [{{:editor/keys [mixture-id ingredient-id]} :view/quantity-editor} db
+        quantity (parse-float input)]
+    (-> db
+        (cond-> (and (some? quantity) (pos? quantity))
+          (assoc-in [:db/mixtures mixture-id
+                     :mixture/parts ingredient-id] quantity))
+        (update-in [:view/quantity-editor :editor/quantity]
+                   merge #:field{:input input
+                                 :value quantity}))))
+
+(defn save-quantity
+  [db]
+  (assoc-in db [:view/quantity-editor :editor/visible?] false))
+
+(defn cancel-quantity
+  [{{:editor/keys [mixture-id ingredient-id]
+     {orig :field/orig} :editor/quantity} :view/quantity-editor
+    :as db}]
+  (-> (if (and (some? orig) (pos? orig))
+        (assoc-in db [:db/mixtures mixture-id
+                      :mixture/parts ingredient-id] orig)
+        (update-in db [:db/mixtures mixture-id :mixture/parts]
+                   dissoc ingredient-id))
+      (assoc-in [:view/quantity-editor :editor/visible?] false)))
+
+(rf/reg-event-db
+ ::edit-quantity
+ [check-spec-interceptor]
+ (fn [db [_ mixture-id ingredient-id]]
+   (edit-quantity db mixture-id ingredient-id)))
+
+(rf/reg-event-db
+ ::change-quantity
+ [check-spec-interceptor]
+ (fn [db [_ quantity]]
+   (change-quantity db quantity)))
+
+(rf/reg-event-db
+ ::save-quantity
+ [check-spec-interceptor]
+ (fn [db _]
+   (save-quantity db)))
+
+(rf/reg-event-db
+ ::cancel-quantity
+ [check-spec-interceptor]
+ (fn [db _]
+   (cancel-quantity db)))

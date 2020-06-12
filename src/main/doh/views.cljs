@@ -2,9 +2,9 @@
   (:require [doh.events :as e]
             [doh.subs :as sub]
             [doh.material-ui :as mui]
-            [doh.part-weight-editor :as pw-ed]
             [cljs.pprint :refer [pprint]]
             [clojure.set :refer [rename-keys]]
+            [reagent.core :as r]
             [re-frame.core :as rf]))
 
 (set! *warn-on-infer* true)
@@ -225,41 +225,14 @@
      [mui/switch  {:checked flour?}]]))
 
 (defn part-cell
-  [mixture-id ingredient-id]
-  (let [quantity (rf/subscribe [::sub/part-quantity mixture-id ingredient-id])
-        part-ident {:mixture-id mixture-id :ingredient-id ingredient-id}
-        editor (rf/subscribe [::pw-ed/editor part-ident])
-        !element (atom nil)]
-    (fn [_]
-      (let [{:keys [editing? input]} @editor
-            cancel-fn #(rf/dispatch [::pw-ed/cancel-edit part-ident])]
-        [table-button-cell
-         {:align :right
-          :label (or @quantity 0)
-          :button-ref #(reset! !element %)
-          :on-click #(rf/dispatch [::pw-ed/start-edit part-ident])}
-         [mui/popover
-          {:open editing?
-           :anchor-el @!element
-           :anchor-origin {:horizontal :center
-                           :vertical :bottom}
-           :transform-origin {:horizontal :center
-                              :vertical :top}
-           :on-close cancel-fn}
-          [:form
-           {:on-submit (fn [evt]
-                         (.preventDefault evt)
-                         (rf/dispatch [::pw-ed/save-edit part-ident]))}
-           [mui/dialog-content
-            [mui/text-field
-             {:label "Weight"
-              :type :number
-              :value input
-              :on-change #(rf/dispatch-sync [::pw-ed/enter-weight part-ident (event-value %)])
-              :auto-focus true}]]
-           [mui/dialog-actions
-            [cancel-button {:on-click cancel-fn}]
-            [save-button]]]]]))))
+  [{:keys [mixture-id ingredient-id on-edit-part]}]
+  (let [quantity @(rf/subscribe [::sub/part-quantity mixture-id ingredient-id])]
+    [table-button-cell
+     {:align :right
+      :label (or quantity 0)
+      :on-click (fn [e]
+                  (on-edit-part mixture-id ingredient-id
+                                (.-currentTarget e)))}]))
 
 (defn ingredient-total-cell
   [ingredient-id]
@@ -274,9 +247,8 @@
   (let [percentage @(rf/subscribe [::sub/ingredient-percentage ingredient-id])]
     [mui/table-cell {:align :right} (format% percentage)]))
 
-(defn table-tab
-  "Renders the 'Table' tab."
-  []
+(defn ingredient-table
+  [{:keys [on-edit-part]}]
   (let [mixtures @(rf/subscribe [::sub/recipe-mixtures])
         ingredient-ids @(rf/subscribe [::sub/recipe-ingredient-ids])]
     [mui/table-container
@@ -299,9 +271,53 @@
           [ingredient-flour-cell ingredient-id]
           (for [{:mixture/keys [id]} mixtures]
             ^{:key id}
-            [part-cell id ingredient-id])
+            [part-cell {:mixture-id id 
+                        :ingredient-id ingredient-id
+                        :on-edit-part on-edit-part}])
           [ingredient-total-cell ingredient-id]
           [ingredient-percentage-cell ingredient-id]])]]]))
+
+(defn quantity-editor
+  [{:keys [anchor-el]}]
+  (let [{visible? :editor/visible?
+         {quantity :field/input} :editor/quantity}
+        @(rf/subscribe [::sub/quantity-editor])
+        cancel-fn #(rf/dispatch [::e/cancel-quantity])]
+    [mui/popover
+     {:open (boolean visible?)
+      :anchor-el anchor-el
+      :anchor-origin {:horizontal :center
+                      :vertical :bottom}
+      :transform-origin {:horizontal :center
+                         :vertical :top}
+      :on-close cancel-fn}
+     [:form
+      {:on-submit (fn [evt]
+                    (.preventDefault evt)
+                    (rf/dispatch [::e/save-quantity]))}
+      [mui/dialog-content
+       [mui/text-field
+        {:label "Quantity"
+         :type :number
+         :value quantity
+         :on-change #(rf/dispatch-sync [::e/change-quantity (event-value %)])
+         :auto-focus true}]]
+      [mui/dialog-actions
+       [cancel-button {:on-click cancel-fn}]
+       [save-button]]]]))
+
+(defn table-tab
+  "Renders the 'Table' tab."
+  []
+  (let [element (r/atom nil)]
+    (fn []
+      [:<>
+       [ingredient-table
+        {:on-edit-part
+         (fn [mixture-id ingredient-id el]
+           (reset! element el)
+           (rf/dispatch [::e/edit-quantity mixture-id ingredient-id]))}]
+       [quantity-editor {:anchor-el @element}]])))
 
 (def app
   (mui/with-styles

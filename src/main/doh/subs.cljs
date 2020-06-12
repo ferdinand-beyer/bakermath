@@ -36,11 +36,17 @@
  (fn [db _]
    (or (:view/tab db) :recipe)))
 
-;; The global part editor.
+;;;; Editors
+
 (rf/reg-sub
  ::part-editor
  (fn [db _]
    (:view/part-editor db)))
+
+(rf/reg-sub
+ ::quantity-editor
+ (fn [db _]
+   (:view/quantity-editor db)))
 
 ;;;; Ingredients
 

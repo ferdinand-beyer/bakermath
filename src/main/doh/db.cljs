@@ -43,11 +43,12 @@
 (s/def ::data
   (s/keys :req [:db/last-id :db/ingredients :db/mixtures :db/recipes]))
 
+(s/def :field/orig any?)
 (s/def :field/input any?)
 (s/def :field/value any?)
 (s/def :field/error string?)
 
-(s/def ::field (s/keys :opt [:field/input :field/value :field/error]))
+(s/def ::field (s/keys :opt [:field/orig :field/input :field/value :field/error]))
 
 (s/def :editor/visible? boolean?)
 (s/def :editor/mode #{:new :edit})
@@ -64,11 +65,20 @@
                 :editor/name
                 :editor/quantity]))
 
+(s/def :view/quantity-editor
+  (s/keys :req [:editor/visible?
+                :editor/mixture-id
+                :editor/ingredient-id
+                :editor/quantity]))
+
 (s/def :view/recipe :recipe/id)
 (s/def :view/tab #{:recipe :table})
 
 (s/def ::view
-  (s/keys :opt [:view/recipe :view/tab :view/part-editor]))
+  (s/keys :opt [:view/recipe
+                :view/tab
+                :view/part-editor
+                :view/quantity-editor]))
 
 (s/def ::db
   (s/merge ::data ::view))
