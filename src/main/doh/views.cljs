@@ -78,25 +78,25 @@
               :on-click #(reset! anchor-el (.-currentTarget %))}
              [mui/more-vert-icon]]]
            (let [close-menu #(reset! anchor-el nil)
-                 dispatch (fn [key] #(do (close-menu) (rf/dispatch [key mixture-id])))]
+                 dispatch* #(do (close-menu) (rf/dispatch [% mixture-id]))]
              [mui/menu
               {:open (some? @anchor-el)
                :anchor-el @anchor-el
                :on-close close-menu}
               [mui/menu-item
-               {:on-click (dispatch ::e/edit-mixture)}
+               {:on-click #(dispatch* ::e/edit-mixture)}
                "Edit"]
               [mui/menu-item
-               {:on-click (dispatch ::e/delete-mixture)}
-               "Delete"]
-              [mui/menu-item
                {:disabled @first?
-                :on-click (dispatch ::e/move-mixture-forward)}
+                :on-click #(dispatch* ::e/move-mixture-forward)}
                "Move Up"]
               [mui/menu-item
                {:disabled @last?
-                :on-click (dispatch ::e/move-mixture-backward)}
-               "Move Down"]])])))))
+                :on-click #(dispatch* ::e/move-mixture-backward)}
+               "Move Down"]
+              [mui/menu-item
+               {:on-click #(dispatch* ::e/delete-mixture)}
+               "Delete"]])])))))
 
 (defn mixture
   "Renders a mixture as a list of its parts."
