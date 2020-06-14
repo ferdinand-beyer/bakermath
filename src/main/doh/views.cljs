@@ -30,7 +30,51 @@
           props)
    "Save"])
 
-;;;; Recipe view
+;;;; HOME SCREEN
+
+(defn recipe-item
+  [{:keys [recipe-id]}]
+  (let [name @(rf/subscribe [::sub/recipe-name recipe-id])]
+    [mui/list-item
+     {:button true
+      :on-click #(rf/dispatch [::e/open-recipe recipe-id])}
+     [mui/list-item-text {:primary name}]]))
+
+(defn recipe-list
+  []
+  (let [recipe-ids @(rf/subscribe [::sub/recipe-ids])]
+    [mui/list
+     [mui/list-subheader "Recipes"]
+     (for [id recipe-ids]
+       ^{:key id} [recipe-item {:recipe-id id}])]))
+
+(def home-screen
+  (mui/with-styles
+    (fn [theme]
+      (let [spacing (.spacing theme 2)]
+        {:root {:padding-bottom (+ spacing 56)}
+         :fab {:position :fixed
+               :bottom spacing
+               :right spacing}}))
+    (fn [{:keys [classes]}]
+      [:div {:class (:root classes)}
+       [:div
+        [mui/app-bar
+         {:position :sticky}
+         [mui/tool-bar
+          [mui/typography
+           {:variant :h6}
+           "d'oh!"]]]
+        [recipe-list]
+        [mui/fab
+         {:class (:fab classes)
+          :color :secondary
+          :on-click #(rf/dispatch [::e/new-recipe])}
+         [mui/add-icon]]]])))
+
+;;;; RECIPE SCREEN
+
+;;; Recipe view
 
 (defn part-list-item
   "Renders a list item for a mixture part."
@@ -233,7 +277,7 @@
          :on-click #(rf/dispatch [::e/new-mixture])}
         [mui/add-icon]]])))
 
-;;;; Table View
+;;; Table View
 
 (def table-button-cell
   "Renders a table cell that acts as a button.
@@ -397,7 +441,7 @@
            (rf/dispatch [::e/edit-quantity mixture-id ingredient-id]))}]
        [quantity-editor {:anchor-el @element}]])))
 
-;;;; App root
+;;; Recipe screen frame
 
 (defn undo-snackbar
   []
@@ -419,7 +463,7 @@
                      :on-click #(rf/dispatch [:undo])}
                     "Undo"])}]))))
 
-(def app
+(def recipe-screen
   (mui/with-styles
     (fn [theme]
       {:root {:flexGrow 1}
@@ -435,7 +479,8 @@
            [mui/icon-button
             {:edge :start
              :class (:menuButton classes)
-             :color :inherit}
+             :color :inherit
+             :on-click #(rf/dispatch [::e/close-recipe])}
             [mui/arrow-back-icon]]
            [mui/typography
             {:variant :h6
@@ -454,6 +499,14 @@
            :table [table-tab]
            nil)
          [undo-snackbar]]))))
+
+;;;; APP ROOT
+
+(defn app
+  []
+  (case @(rf/subscribe [::sub/app-screen])
+    :home [home-screen]
+    :recipe [recipe-screen]))
 
 (def theme
   (mui/theme

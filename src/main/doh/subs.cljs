@@ -36,6 +36,14 @@
  (fn [db _]
    (or (:view/tab db) :recipe)))
 
+;;;; Screens
+
+(rf/reg-sub
+ ::app-screen
+ :<- [::current-recipe-id]
+ (fn [recipe-id _]
+   (if (some? recipe-id) :recipe :home)))
+
 ;;;; Editors
 
 (rf/reg-sub
@@ -52,6 +60,20 @@
  ::quantity-editor
  (fn [db _]
    (:view/quantity-editor db)))
+
+;;;; Recipes
+
+(rf/reg-sub
+ ::recipe-ids
+ :<- [::recipes]
+ (fn [recipes _]
+   (->> recipes vals (sort-by :recipe/name) (map :recipe/id))))
+
+(rf/reg-sub
+ ::recipe-name
+ :<- [::recipes]
+ (fn [recipes [_ recipe-id]]
+   (get-in recipes [recipe-id :recipe/name])))
 
 ;;;; Ingredients
 
@@ -131,7 +153,7 @@
  (fn [mixture [_ _ ingredient-id]]
    (get (:mixture/parts mixture) ingredient-id)))
 
-;;;; Recipes
+;;;; Selected Recipe
 
 ;; The current recipe.
 (rf/reg-sub

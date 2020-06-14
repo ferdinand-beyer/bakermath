@@ -23,6 +23,18 @@
 ;;;; Views
 
 (rf/reg-event-db
+ ::open-recipe
+ [check-spec-interceptor]
+ (fn [db [_ recipe-id]]
+   (assoc db :view/recipe recipe-id)))
+
+(rf/reg-event-db
+ ::close-recipe
+ [check-spec-interceptor]
+ (fn [db _]
+   (dissoc db :view/recipe)))
+
+(rf/reg-event-db
  ::select-recipe-tab
  [check-spec-interceptor]
  (fn [db [_ {:keys [tab]}]]

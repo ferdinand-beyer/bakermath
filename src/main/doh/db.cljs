@@ -161,5 +161,5 @@
                                      wheat-fg 50
                                      water 175
                                      salt 9})
-        [db recipe] (add-recipe db "My Bread" [sourdough maindough])]
-    (assoc db :view/recipe recipe)))
+        [db _] (add-recipe db "My Bread" [sourdough maindough])]
+    db))
