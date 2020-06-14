@@ -39,6 +39,11 @@
 ;;;; Editors
 
 (rf/reg-sub
+ ::mixture-editor
+ (fn [db _]
+   (:view/mixture-editor db)))
+
+(rf/reg-sub
  ::part-editor
  (fn [db _]
    (:view/part-editor db)))

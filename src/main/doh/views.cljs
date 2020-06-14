@@ -84,10 +84,7 @@
                "Edit"]
               [mui/menu-item
                {:on-click (menu-action onDelete)}
-               "Delete"]
-              [mui/menu-item
-               {:on-click (menu-action onAdd)}
-               "Add Ingredient"]])])))))
+               "Delete"]])])))))
 
 (defn mixture
   "Renders a mixture as a list of its parts."
@@ -98,6 +95,7 @@
      [mixture-header
       {:label (:mixture/name mixture)
        :on-add #(rf/dispatch [::e/new-part mixture-id])
+       :on-edit #(rf/dispatch [::e/edit-mixture mixture-id])
        :on-delete #(rf/dispatch [::e/delete-mixture mixture-id])}]
      [mui/list
       (for [id ingredient-ids]
@@ -129,58 +127,83 @@
                          (when on-change (on-change evt val)))
       :text-field-props (dissoc props :value :input-value :on-change)}]))
 
+(defn dialog-editor
+  "Renders a modal editor."
+  [{:keys [visible? title on-save on-cancel]} children]
+  [mui/dialog
+   {:open visible?
+    :on-close on-cancel
+    :max-width :xs
+    :full-width true}
+   [:form
+    {:on-submit (fn [e]
+                  (.preventDefault e)
+                  (on-save))}
+    [mui/dialog-title title]
+    [mui/dialog-content children]
+    [mui/dialog-actions
+     [cancel-button {:on-click on-cancel}]
+     [save-button]]]])
+
+(defn mixture-editor
+  []
+  (when-let [{:editor/keys [visible? mixture-id name]}
+             @(rf/subscribe [::sub/mixture-editor])]
+    [dialog-editor
+     {:visible? visible?
+      :title (str (if mixture-id "Edit" "New") " Mixture")
+      :on-save #(rf/dispatch [::e/save-mixture])
+      :on-cancel #(rf/dispatch [::e/cancel-mixture])}
+     [mui/text-field
+      {:label "Name"
+       :full-width true
+       :auto-focus true
+       :value (:field/input name)
+       :error (some? (:field/error name))
+       :helper-text (:field/error name)
+       :on-change #(rf/dispatch-sync
+                    [::e/change-mixture-name (event-value %)])}]]))
+
 (defn part-editor
   "Renders the part editor."
   []
-  (when-let [{:editor/keys [visible? mode ingredient-id name quantity]}
+  (when-let [{:editor/keys [visible? ingredient-id name quantity]}
              @(rf/subscribe [::sub/part-editor])]
-    (let [cancel-fn #(rf/dispatch [::e/cancel-part])]
-      [mui/dialog
-       {:open visible?
-        :on-close cancel-fn
-        :max-width :xs
-        :full-width true}
-       [:form
-        {:on-submit (fn [e]
-                      (.preventDefault e)
-                      (rf/dispatch [::e/save-part]))}
-        [mui/dialog-title {} (if (= mode :new)
-                               "Add ingredient"
-                               "Edit ingredient")]
-        [mui/dialog-content
-         [mui/grid
-          {:container true
-           :spacing 2}
-          [mui/grid
-           {:item true
-            :xs 8}
-           [ingredient-input
-            {:label "Ingredient"
-             :autoFocus (= mode :new)
-             :fullWidth true
-             :value ingredient-id
-             :input-value (:field/input name)
-             :error (some? (:field/error name))
-             :helperText (:field/error name)
-             :on-change #(rf/dispatch-sync [::e/change-part-name %2])}]]
-          [mui/grid
-           {:item true
-            :xs 4}
-           [mui/text-field
-            {:label "Quantity"
-             :type :number
-             :input-props {:min 0.01
-                           :step 0.01}
-             :full-width true
-             :auto-focus (= mode :edit)
-             :value (:field/input quantity)
-             :error (some? (:field/error quantity))
-             :helper-text (:field/error quantity)
-             :on-change #(rf/dispatch-sync
-                          [::e/change-part-quantity (event-value %)])}]]]]
-        [mui/dialog-actions
-         [cancel-button {:on-click cancel-fn}]
-         [save-button]]]])))
+    [dialog-editor
+     {:visible? visible?
+      :title (str (if ingredient-id "Edit" "New") " Ingredient")
+      :on-save #(rf/dispatch [::e/save-part])
+      :on-cancel #(rf/dispatch [::e/cancel-part])}
+     [mui/grid
+      {:container true
+       :spacing 2}
+      [mui/grid
+       {:item true
+        :xs 8}
+       [ingredient-input
+        {:label "Ingredient"
+         :autoFocus (nil? ingredient-id)
+         :fullWidth true
+         :value ingredient-id
+         :input-value (:field/input name)
+         :error (some? (:field/error name))
+         :helperText (:field/error name)
+         :on-change #(rf/dispatch-sync [::e/change-part-name %2])}]]
+      [mui/grid
+       {:item true
+        :xs 4}
+       [mui/text-field
+        {:label "Quantity"
+         :type :number
+         :input-props {:min 0.01
+                       :step 0.01}
+         :full-width true
+         :auto-focus (some? ingredient-id)
+         :value (:field/input quantity)
+         :error (some? (:field/error quantity))
+         :helper-text (:field/error quantity)
+         :on-change #(rf/dispatch-sync
+                      [::e/change-part-quantity (event-value %)])}]]]]))
 
 (def recipe-tab
   (mui/with-styles
@@ -193,10 +216,12 @@
     (fn [{:keys [classes]}]
       [:div {:class (:root classes)}
        [mixture-list]
+       [mixture-editor]
        [part-editor]
        [mui/fab
         {:class (:fab classes)
-         :color :secondary}
+         :color :secondary
+         :on-click #(rf/dispatch [::e/new-mixture])}
         [mui/add-icon]]])))
 
 ;;;; Table View

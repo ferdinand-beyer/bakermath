@@ -51,15 +51,18 @@
 (s/def ::field (s/keys :opt [:field/orig :field/input :field/value :field/error]))
 
 (s/def :editor/visible? boolean?)
-(s/def :editor/mode #{:new :edit})
 (s/def :editor/mixture-id :mixture/id)
 (s/def :editor/ingredient-id :ingredient/id)
 (s/def :editor/name ::field)
 (s/def :editor/quantity ::field)
 
+(s/def :view/mixture-editor
+  (s/keys :req [:editor/visible?]
+          :opt [:editor/mixture-id
+                :editor/name]))
+
 (s/def :view/part-editor
   (s/keys :req [:editor/visible?
-                :editor/mode
                 :editor/mixture-id]
           :opt [:editor/ingredient-id
                 :editor/name
@@ -77,6 +80,7 @@
 (s/def ::view
   (s/keys :opt [:view/recipe
                 :view/tab
+                :view/mixture-editor
                 :view/part-editor
                 :view/quantity-editor]))
 
@@ -117,6 +121,12 @@
         :recipe/mixtures mixtures}))
 
 ;;;; Query
+
+(defn find-mixture-by-name
+  [db name]
+  (->> db :db/mixtures vals
+       (filter #(= name (:mixture/name %)))
+       first))
 
 (defn find-ingredient-by-name
   [db name]

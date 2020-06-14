@@ -40,18 +40,7 @@
  (fn [db [_ ingredient-id]]
    (toggle-ingredient-flour db ingredient-id)))
 
-;;;; Parts
-
-(rf/reg-event-db
- ::delete-part
- [(undoable "Ingredient deleted")
-  check-spec-interceptor]
- (fn [db [_ mixture-id ingredient-id]]
-   ; TODO Delete ingredient when no longer referenced?
-   (update-in db [:db/mixtures mixture-id :mixture/parts]
-              dissoc ingredient-id)))
-
-;;;; Mixture editor
+;;;; Mixtures
 
 (defn delete-mixture
   [db mixture-id]
@@ -67,6 +56,95 @@
  (fn [db [_ mixture-id]]
    (delete-mixture db mixture-id)))
 
+;;;; Parts
+
+(rf/reg-event-db
+ ::delete-part
+ [(undoable "Ingredient deleted")
+  check-spec-interceptor]
+ (fn [db [_ mixture-id ingredient-id]]
+   ; TODO Delete ingredient when no longer referenced?
+   (update-in db [:db/mixtures mixture-id :mixture/parts]
+              dissoc ingredient-id)))
+
+;;;; Mixture Editor
+
+(defn new-mixture
+  [db]
+  (assoc db :view/mixture-editor
+         #:editor{:visible? true}))
+
+(defn edit-mixture
+  [db mixture-id]
+  (assoc db :view/mixture-editor
+         #:editor{:visible? true
+                  :mixture-id mixture-id
+                  :name {:field/input (get-in db [:db/mixtures mixture-id :mixture/name])}}))
+
+(defn change-mixture-name
+  [db name]
+  (assoc-in db [:view/mixture-editor :editor/name :field/input] name))
+
+(defn validate-mixture-name
+  [db]
+  (let [{{{:field/keys [input]} :editor/name
+          :editor/keys [mixture-id]} :view/mixture-editor} db
+        value (when (db/not-blank? input) input)
+        existing (when value (db/find-mixture-by-name db value))
+        error (cond
+                (nil? value) "Invalid name"
+                (and (some? existing)
+                     (not= mixture-id (:mixture/id existing)))
+                "Already exists")]
+    (assoc-in db [:view/mixture-editor :editor/name]
+              (cond-> #:field{:input input, :value value}
+                (some? error) (assoc :field/error error)))))
+
+(defn save-mixture
+  [db]
+  (let [{{:editor/keys [mixture-id]
+          {:field/keys [value error]} :editor/name}
+         :view/mixture-editor
+         :as db}
+        (validate-mixture-name db)]
+    (if (some? error)
+      db
+      (-> (if (some? mixture-id)
+            (assoc-in db [:db/mixtures mixture-id :mixture/name] value)
+            (let [recipe-id (:view/recipe db)
+                  [db id] (db/add-mixture db value {})]
+              (update-in db [:db/recipes recipe-id :recipe/mixtures] conj id)))
+          (assoc-in [:view/mixture-editor :editor/visible?] false)))))
+
+(defn cancel-mixture
+  [db]
+  (assoc-in db [:view/mixture-editor :editor/visible?] false))
+
+(rf/reg-event-db
+ ::new-mixture
+ (fn [db _]
+   (new-mixture db)))
+
+(rf/reg-event-db
+ ::edit-mixture
+ (fn [db [_ mixture-id]]
+   (edit-mixture db mixture-id)))
+
+(rf/reg-event-db
+ ::change-mixture-name
+ (fn [db [_ name]]
+   (change-mixture-name db name)))
+
+(rf/reg-event-db
+ ::save-mixture
+ (fn [db _]
+   (save-mixture db)))
+
+(rf/reg-event-db
+ ::cancel-mixture
+ (fn [db _]
+   (cancel-mixture db)))
+
 ;;;; Part Editor
 
 (defn- parse-float [x]
@@ -78,9 +156,8 @@
   "Open the part editor to add a part to the mixture."
   [db mixture-id]
   (assoc db :view/part-editor
-         #:editor {:visible? true
-                   :mode :new
-                   :mixture-id mixture-id}))
+         #:editor{:visible? true
+                  :mixture-id mixture-id}))
 
 (defn edit-part
   "Open the part editor to edit an existing part."
@@ -88,12 +165,11 @@
   (let [name (get-in db [:db/ingredients ingredient-id :ingredient/name])
         quantity (get-in db [:db/mixtures mixture-id :mixture/parts ingredient-id])]
     (assoc db :view/part-editor
-           #:editor {:visible? true
-                     :mode :edit
-                     :mixture-id mixture-id
-                     :ingredient-id ingredient-id
-                     :name {:field/input name}
-                     :quantity {:field/input quantity}})))
+           #:editor{:visible? true
+                    :mixture-id mixture-id
+                    :ingredient-id ingredient-id
+                    :name {:field/input name}
+                    :quantity {:field/input quantity}})))
 
 (defn change-part-name [db name]
   (assoc-in db [:view/part-editor :editor/name] {:field/input name}))
