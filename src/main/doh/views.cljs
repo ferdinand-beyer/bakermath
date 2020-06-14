@@ -53,22 +53,41 @@
        [mui/delete-icon]]]]))
 
 (def mixture-header
+  "Renders the header toolbar for a mixture."
   (mui/with-styles
     {:grow {:flex-grow 1}}
-    (fn [{:keys [label classes onAdd]}]
-      [mui/tool-bar
-       {:class (:grow classes)
-        :disable-gutters false}
-       [mui/typography
-        {:class (:grow classes)
-         :variant :subtitle1}
-        label]
-       [mui/icon-button
-        {:on-click onAdd}
-        [mui/add-icon]]
-       [mui/icon-button
-        {:edge :end}
-        [mui/more-vert-icon]]])))
+    (fn [{:keys [classes]}]
+      (let [anchor-el (r/atom nil)]
+        (fn [{:keys [label onAdd onEdit onDelete]}]
+          [:<>
+           [mui/tool-bar
+            {:class (:grow classes)}
+            [mui/typography
+             {:class (:grow classes)
+              :variant :subtitle1}
+             label]
+            [mui/icon-button
+             {:on-click onAdd}
+             [mui/add-icon]]
+            [mui/icon-button
+             {:edge :end
+              :on-click #(reset! anchor-el (.-currentTarget %))}
+             [mui/more-vert-icon]]]
+           (let [close-menu #(reset! anchor-el nil)
+                 menu-action (fn [f] #(do (close-menu) (f)))]
+             [mui/menu
+              {:open (some? @anchor-el)
+               :anchor-el @anchor-el
+               :on-close close-menu}
+              [mui/menu-item
+               {:on-click (menu-action onEdit)}
+               "Edit"]
+              [mui/menu-item
+               {:on-click (menu-action onDelete)}
+               "Delete"]
+              [mui/menu-item
+               {:on-click (menu-action onAdd)}
+               "Add Ingredient"]])])))))
 
 (defn mixture
   "Renders a mixture as a list of its parts."
@@ -78,7 +97,8 @@
     [:div
      [mixture-header
       {:label (:mixture/name mixture)
-       :on-add #(rf/dispatch [::e/new-part mixture-id])}]
+       :on-add #(rf/dispatch [::e/new-part mixture-id])
+       :on-delete #(rf/dispatch [::e/delete-mixture mixture-id])}]
      [mui/list
       (for [id ingredient-ids]
         ^{:key id} [part-list-item mixture-id id])]]))
@@ -345,6 +365,26 @@
 
 ;;;; App root
 
+(defn undo-snackbar
+  []
+  (let [ack (r/atom [])
+        explanations (rf/subscribe [:undo-explanations])]
+    (fn []
+      (let [handle-close #(reset! ack @explanations)]
+        [mui/snackbar
+         {:open (not= @ack @explanations)
+          :anchor-origin {:vertical :bottom
+                          :horizontal :left}
+          :auto-hide-duration 3000
+          :on-close handle-close
+          :message (last @explanations)
+          :action (r/as-element
+                   [mui/button
+                    {:color :primary
+                     :size :small
+                     :on-click #(rf/dispatch [:undo])}
+                    "Undo"])}]))))
+
 (def app
   (mui/with-styles
     (fn [theme]
@@ -378,7 +418,8 @@
          (case tab
            :recipe [recipe-tab]
            :table [table-tab]
-           nil)]))))
+           nil)
+         [undo-snackbar]]))))
 
 (def theme
   (mui/theme

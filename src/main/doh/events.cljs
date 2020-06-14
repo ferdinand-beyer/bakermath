@@ -1,7 +1,8 @@
 (ns doh.events
   (:require [doh.db :as db]
             [cljs.spec.alpha :as s]
-            [re-frame.core :as rf]))
+            [re-frame.core :as rf]
+            [day8.re-frame.undo :refer [undoable]]))
 
 (defn validate-db
   [db]
@@ -9,11 +10,6 @@
     (throw (ex-info (str "spec check failed") data))))
 
 (def check-spec-interceptor (rf/after validate-db))
-
-(defn dissoc-vec
-  "Remove an element by index from a vector."
-  [v index]
-  (vec (concat (subvec v 0 index) (subvec v (inc index)))))
 
 ;;;; Initialization
 
@@ -48,11 +44,28 @@
 
 (rf/reg-event-db
  ::delete-part
- [check-spec-interceptor]
+ [(undoable "Ingredient deleted")
+  check-spec-interceptor]
  (fn [db [_ mixture-id ingredient-id]]
    ; TODO Delete ingredient when no longer referenced?
    (update-in db [:db/mixtures mixture-id :mixture/parts]
               dissoc ingredient-id)))
+
+;;;; Mixture editor
+
+(defn delete-mixture
+  [db mixture-id]
+  (let [recipe-id (:view/recipe db)]
+    (-> db
+        (update-in [:db/recipes recipe-id :recipe/mixtures]
+                   #(->> % (remove (partial = mixture-id)) vec)))))
+
+(rf/reg-event-db
+ ::delete-mixture
+ [(undoable "Mixture deleted")
+  check-spec-interceptor]
+ (fn [db [_ mixture-id]]
+   (delete-mixture db mixture-id)))
 
 ;;;; Part Editor
 

@@ -33,9 +33,13 @@
    ["@material-ui/core/ListItemText" :as list-item-text]
    ["@material-ui/core/ListSubheader" :as list-subheader]
 
+   ["@material-ui/core/Menu" :as menu]
+   ["@material-ui/core/MenuItem" :as menu-item]
+   
    ["@material-ui/core/Paper" :as paper]
    ["@material-ui/core/Popover" :as popover]
    
+   ["@material-ui/core/Snackbar" :as snackbar]
    ["@material-ui/core/Switch" :as switch]
    
    ["@material-ui/core/Table" :as table]
@@ -140,9 +144,13 @@
 (def list-item-text (r/adapt-react-class list-item-text/default))
 (def list-subheader (r/adapt-react-class list-subheader/default))
 
+(def menu (r/adapt-react-class menu/default))
+(def menu-item (r/adapt-react-class menu-item/default))
+
 (def paper (r/adapt-react-class paper/default))
 (def popover (r/adapt-react-class popover/default))
 
+(def snackbar (r/adapt-react-class snackbar/default))
 (def switch (r/adapt-react-class switch/default))
 
 (def table (r/adapt-react-class table/default))
