@@ -25,7 +25,9 @@
 
 (defn save-button [props]
   [mui/button
-   (merge {:type :submit, :color :primary} props)
+   (merge {:type :submit
+           :color :primary}
+          props)
    "Save"])
 
 ;;;; Recipe view
@@ -412,7 +414,7 @@
           :message (last @explanations)
           :action (r/as-element
                    [mui/button
-                    {:color :primary
+                    {:color :secondary
                      :size :small
                      :on-click #(rf/dispatch [:undo])}
                     "Undo"])}]))))
@@ -455,8 +457,8 @@
 
 (def theme
   (mui/theme
-   {:palette {:primary (mui/color :amber)
-              :secondary (mui/color :indigo)}}))
+   {:palette {:primary {:main (mui/color :blue :500)}
+              :secondary {:main (mui/color :amber :A400)}}}))
 
 (defn root []
   [:<>
