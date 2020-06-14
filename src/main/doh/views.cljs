@@ -4,6 +4,7 @@
             [doh.material-ui :as mui]
             [cljs.pprint :refer [pprint]]
             [clojure.set :refer [rename-keys]]
+            [clojure.string :as str]
             [reagent.core :as r]
             [re-frame.core :as rf]))
 
@@ -246,7 +247,9 @@
     [mui/table-cell {:align :right} total]))
 
 (defn format% [n]
-  (str (.toFixed n 1) "%"))
+  (-> (.toFixed n 2)
+      (str/replace #"(\.0|(?<=\.\d*[^0])0)0*$" "")
+      (str "%")))
 
 (defn ingredient-percentage-cell
   [ingredient-id]
