@@ -42,12 +42,50 @@
 
 ;;;; Mixtures
 
+(defn- mixture-index
+  [db recipe-id mixture-id]
+  (->> (get-in db [:db/recipes recipe-id :recipe/mixtures])
+       (keep-indexed (fn [k id] (when (= id mixture-id) k)))
+       first))
+
+(defn- swap-indexes
+  [v i k]
+  (mapv (fn [index val]
+          (condp = index
+            i (get v k val)
+            k (get v i val)
+            val))
+        (range) v))
+
+(defn- swap-mixtures
+  [db recipe-id i k]
+  (update-in db [:db/recipes recipe-id :recipe/mixtures] swap-indexes i k))
+
+(defn- move-mixture
+  [db mixture-id index-fn]
+  (let [recipe-id (:view/recipe db)
+        index (mixture-index db recipe-id mixture-id)]
+    (swap-mixtures db recipe-id index (index-fn index))))
+
 (defn delete-mixture
   [db mixture-id]
   (let [recipe-id (:view/recipe db)]
     (-> db
         (update-in [:db/recipes recipe-id :recipe/mixtures]
-                   #(->> % (remove (partial = mixture-id)) vec)))))
+                   #(->> % (remove (partial = mixture-id)) vec))
+        (update :db/mixtures dissoc mixture-id))))
+
+(rf/reg-event-db
+ ::move-mixture-forward
+ [check-spec-interceptor]
+ (fn [db [_ mixture-id]]
+   (move-mixture db mixture-id dec)))
+
+(rf/reg-event-db
+ ::move-mixture-backward
+ [check-spec-interceptor]
+ (fn [db [_ mixture-id]]
+   (move-mixture db mixture-id inc)))
 
 (rf/reg-event-db
  ::delete-mixture
@@ -122,26 +160,31 @@
 
 (rf/reg-event-db
  ::new-mixture
+ [check-spec-interceptor]
  (fn [db _]
    (new-mixture db)))
 
 (rf/reg-event-db
  ::edit-mixture
+ [check-spec-interceptor]
  (fn [db [_ mixture-id]]
    (edit-mixture db mixture-id)))
 
 (rf/reg-event-db
  ::change-mixture-name
+ [check-spec-interceptor]
  (fn [db [_ name]]
    (change-mixture-name db name)))
 
 (rf/reg-event-db
  ::save-mixture
+ [check-spec-interceptor]
  (fn [db _]
    (save-mixture db)))
 
 (rf/reg-event-db
  ::cancel-mixture
+ [check-spec-interceptor]
  (fn [db _]
    (cancel-mixture db)))
 

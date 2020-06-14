@@ -56,47 +56,54 @@
   "Renders the header toolbar for a mixture."
   (mui/with-styles
     {:grow {:flex-grow 1}}
-    (fn [{:keys [classes]}]
-      (let [anchor-el (r/atom nil)]
-        (fn [{:keys [label onAdd onEdit onDelete]}]
+    (fn [{classes :classes
+          mixture-id :mixtureId}]
+      (let [anchor-el (r/atom nil)
+            mixture (rf/subscribe [::sub/mixture mixture-id])
+            first? (rf/subscribe [::sub/recipe-mixture-first? mixture-id])
+            last? (rf/subscribe [::sub/recipe-mixture-last? mixture-id])]
+        (fn [_]
           [:<>
            [mui/tool-bar
             {:class (:grow classes)}
             [mui/typography
              {:class (:grow classes)
               :variant :subtitle1}
-             label]
+             (:mixture/name @mixture)]
             [mui/icon-button
-             {:on-click onAdd}
+             {:on-click #(rf/dispatch [::e/new-part mixture-id])}
              [mui/add-icon]]
             [mui/icon-button
              {:edge :end
               :on-click #(reset! anchor-el (.-currentTarget %))}
              [mui/more-vert-icon]]]
            (let [close-menu #(reset! anchor-el nil)
-                 menu-action (fn [f] #(do (close-menu) (f)))]
+                 dispatch (fn [key] #(do (close-menu) (rf/dispatch [key mixture-id])))]
              [mui/menu
               {:open (some? @anchor-el)
                :anchor-el @anchor-el
                :on-close close-menu}
               [mui/menu-item
-               {:on-click (menu-action onEdit)}
+               {:on-click (dispatch ::e/edit-mixture)}
                "Edit"]
               [mui/menu-item
-               {:on-click (menu-action onDelete)}
-               "Delete"]])])))))
+               {:on-click (dispatch ::e/delete-mixture)}
+               "Delete"]
+              [mui/menu-item
+               {:disabled @first?
+                :on-click (dispatch ::e/move-mixture-forward)}
+               "Move Up"]
+              [mui/menu-item
+               {:disabled @last?
+                :on-click (dispatch ::e/move-mixture-backward)}
+               "Move Down"]])])))))
 
 (defn mixture
   "Renders a mixture as a list of its parts."
   [mixture-id]
-  (let [mixture @(rf/subscribe [::sub/mixture mixture-id])
-        ingredient-ids @(rf/subscribe [::sub/mixture-ingredient-ids mixture-id])]
+  (let [ingredient-ids @(rf/subscribe [::sub/mixture-ingredient-ids mixture-id])]
     [:div
-     [mixture-header
-      {:label (:mixture/name mixture)
-       :on-add #(rf/dispatch [::e/new-part mixture-id])
-       :on-edit #(rf/dispatch [::e/edit-mixture mixture-id])
-       :on-delete #(rf/dispatch [::e/delete-mixture mixture-id])}]
+     [mixture-header {:mixture-id mixture-id}]
      [mui/list
       (for [id ingredient-ids]
         ^{:key id} [part-list-item mixture-id id])]]))
@@ -209,7 +216,7 @@
   (mui/with-styles
     (fn [theme]
       (let [spacing (.spacing theme 2)]
-        {:root {}
+        {:root {:padding-bottom (+ spacing 56)}
          :fab {:position :fixed
                :bottom spacing
                :right spacing}}))

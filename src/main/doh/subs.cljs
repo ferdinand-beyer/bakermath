@@ -183,6 +183,24 @@
  (fn [ingredients _]
    (mapv :ingredient/id ingredients)))
 
+(rf/reg-sub
+ ::recipe-mixture-indexes
+ :<- [::recipe-mixture-ids]
+ (fn [indexes _]
+   (into {} (map vector indexes (range)))))
+
+(rf/reg-sub
+ ::recipe-mixture-first?
+ :<- [::recipe-mixture-indexes]
+ (fn [indexes [_ mixture-id]]
+   (zero? (get indexes mixture-id))))
+
+(rf/reg-sub
+ ::recipe-mixture-last?
+ :<- [::recipe-mixture-indexes]
+ (fn [indexes [_ mixture-id]]
+   (= (dec (count indexes)) (get indexes mixture-id))))
+
 ;;;; Analyses
 
 (rf/reg-sub
